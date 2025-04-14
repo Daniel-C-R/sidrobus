@@ -16,8 +16,8 @@ class AbstractEngine(ABC):
     _energy: float
     _capacity: float
 
-    @abstractmethod
     @property
+    @abstractmethod
     def mass(self) -> float:
         """Returns the mass of the engine."""
         return self._mass
