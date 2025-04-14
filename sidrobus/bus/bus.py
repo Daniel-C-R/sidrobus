@@ -1,6 +1,6 @@
 """Module for Bus class."""
 
-from sidrobus.bus.engine import AbstractEngine
+from sidrobus.bus.engine.abstract_engine import AbstractEngine
 
 
 class Bus:
@@ -17,6 +17,8 @@ class Bus:
         engine: AbstractEngine,
         frontal_area: float,
         mass: float,
+        aerodynamic_drag_coef: float,
+        rolling_resistance_coef: float,
     ) -> None:
         """Initializes a Bus object with an engine, frontal area, and mass.
 
@@ -24,6 +26,9 @@ class Bus:
             engine (AbstractEngine): The engine of the bus.
             frontal_area (float): The frontal area of the bus.
             mass (float): The mass of the bus.
+            aerodynamic_drag_coef (float): The aerodynamic drag coefficient of the bus.
+            rolling_resistance_coef (float): The rolling resistance coefficient of the
+                bus.
 
         Returns:
             None
@@ -31,3 +36,5 @@ class Bus:
         self._engine = engine
         self._frontal_area = frontal_area
         self._mass = mass
+        self._aerodynamic_drag_coef = aerodynamic_drag_coef
+        self._rolling_resistance_coef = rolling_resistance_coef
