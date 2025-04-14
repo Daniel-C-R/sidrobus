@@ -13,8 +13,6 @@ class AbstractEngine(ABC):
 
     _efficiency: float
     _mass: float
-    _energy: float
-    _capacity: float
 
     @property
     @abstractmethod

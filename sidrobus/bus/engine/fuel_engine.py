@@ -10,21 +10,17 @@ class FuelEngine(AbstractEngine):
     engine.
     """
 
-    def __init__(
-        self, efficiency: float, mass: float, energy: float, capacity: float
-    ) -> None:
+    def __init__(self, efficiency: float, mass: float) -> None:
         """Initializes a FuelEngine object with efficiency, mass, energy, and capacity.
 
         Args:
             efficiency (float): Efficiency of the engine.
             mass (float): Mass of the engine.
-            energy (float): Energy of the engine.
-            capacity (float): Capacity of the engine.
 
         Returns:
             None
         """
-        super().__init__(efficiency, mass, energy, capacity)
+        super().__init__(efficiency, mass)
 
     @property
     def mass(self) -> float:
