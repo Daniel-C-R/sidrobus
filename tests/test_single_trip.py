@@ -11,13 +11,13 @@ from sidrobus.route import Route
 @pytest.fixture
 def test_route() -> Route:
     """Fixture to generate an example route."""
+    times = np.array([1, 2, 3, 4, 5])
     longitudes = np.array([0, 1, 2, 3, 2])
     latitudes = np.array([0, 2, 1, 2, 5])
     heights = np.array([0, 1, 3, 0, 2])
-    times = np.array([1, 2, 3, 4, 5])
     velocities = np.array([0, 1, 3, 4, 2])
 
-    return Route(longitudes, latitudes, heights, times, velocities)
+    return Route(times, longitudes, latitudes, heights, velocities)
 
 
 @pytest.fixture
