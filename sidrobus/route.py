@@ -48,3 +48,48 @@ class Route:
         self._latitudes = latitudes
         self._heights = heights
         self._velocities = velocities
+
+    @property
+    def times(self) -> npt.NDArray[np.float64]:
+        """Returns the times of the route.
+
+        Returns:
+            npt.NDArray[np.float64]: Array of time values.
+        """
+        return self._times
+
+    @property
+    def longitudes(self) -> npt.NDArray[np.float64]:
+        """Returns the longitudes of the route.
+
+        Returns:
+            npt.NDArray[np.float64]: Array of longitude values.
+        """
+        return self._longitudes
+
+    @property
+    def latitudes(self) -> npt.NDArray[np.float64]:
+        """Returns the latitudes of the route.
+
+        Returns:
+            npt.NDArray[np.float64]: Array of latitude values.
+        """
+        return self._latitudes
+
+    @property
+    def heights(self) -> npt.NDArray[np.float64]:
+        """Returns the heights of the route.
+
+        Returns:
+            npt.NDArray[np.float64]: Array of height values.
+        """
+        return self._heights
+
+    @property
+    def velocities(self) -> npt.NDArray[np.float64]:
+        """Returns the velocities of the route.
+
+        Returns:
+            npt.NDArray[np.float64]: Array of velocity values.
+        """
+        return self._velocities
