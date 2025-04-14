@@ -41,3 +41,17 @@ def test_route_distances_calculation(test_route: Route) -> None:
     route = test_route
     expected_distances = np.array([2.449489743, 2.449489743, 3.31662479, 3.741657387])
     np.testing.assert_array_almost_equal(route.distances, expected_distances)
+
+
+def test_route_angles_calcuations(test_route: Route) -> None:
+    """Test the route angles calculation."""
+    route = test_route
+    expected_angles = np.array([0.420534335, 0.955316618, -1.130285664, 0.563942641])
+    np.testing.assert_array_almost_equal(route.angles, expected_angles)
+
+
+def test_accelerations_calculation(test_route: Route) -> None:
+    """Test the route accelerations calculation."""
+    route = test_route
+    expected_accelerations = np.array([1, 2, 1, -2], dtype=float)
+    np.testing.assert_array_almost_equal(route.accelerations, expected_accelerations)
