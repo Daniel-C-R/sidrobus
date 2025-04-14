@@ -1,9 +1,9 @@
 """Fuel engine module for a bus."""
 
-from sidrobus.bus.engine.abstract_engine import BaseEngine
+from sidrobus.bus.engine.abstract_engine import AbstractEngine
 
 
-class FuelEngine(BaseEngine):
+class FuelEngine(AbstractEngine):
     """Class representing a fuel engine for a bus.
 
     This class inherits from BaseEngine and implements the methods required for a fuel
@@ -25,3 +25,8 @@ class FuelEngine(BaseEngine):
             None
         """
         super().__init__(efficiency, mass, energy, capacity)
+
+    @property
+    def mass(self) -> float:
+        """Returns the mass of the engine."""
+        return self._mass
