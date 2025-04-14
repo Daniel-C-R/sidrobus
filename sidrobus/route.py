@@ -93,3 +93,45 @@ class Route:
             npt.NDArray[np.float64]: Array of velocity values.
         """
         return self._velocities
+
+    @property
+    def distances(self) -> npt.NDArray[np.float64]:
+        """Calculates the distances between consecutive points along the route.
+
+        Returns:
+            npt.NDArray[np.float64]: Array of distances between consecutive points.
+        """
+        # Calculate differences in heights and horizontal distances
+        height_differences = np.diff(self._heights)
+        horizontal_distances = np.sqrt(
+            np.diff(self._longitudes) ** 2 + np.diff(self._latitudes) ** 2
+        )
+
+        # Calculate distances using Pythagorean theorem
+        return np.sqrt(height_differences**2 + horizontal_distances**2)
+
+    @property
+    def angles(self) -> npt.NDArray[np.float64]:
+        """Calculates the angles between consecutive points along the route.
+
+        Returns:
+            npt.NDArray[np.float64]: Array of angles (in radians) between consecutive
+                points.
+        """
+        # Calculate differences in heights and horizontal distances
+        height_differences = np.diff(self._heights)
+        horizontal_distances = np.sqrt(
+            np.diff(self._longitudes) ** 2 + np.diff(self._latitudes) ** 2
+        )
+
+        # Calculate angles using arctan
+        return np.arctan2(height_differences, horizontal_distances)
+
+    @property
+    def accelerations(self) -> npt.NDArray[np.float64]:
+        """Calculates the accelerations between consecutive points along the route.
+
+        Returns:
+            npt.NDArray[np.float64]: Array of accelerations between consecutive points.
+        """
+        return np.diff(self._velocities) / np.diff(self._times)
