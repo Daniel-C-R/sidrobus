@@ -14,6 +14,19 @@ class AbstractEngine(ABC):
     _efficiency: float
     _mass: float
 
+    def __init__(self, efficiency: float, mass: float) -> None:
+        """Initializes an engine with efficiency and mass.
+
+        Args:
+            efficiency (float): Efficiency of the engine.
+            mass (float): Mass of the engine.
+
+        Returns:
+            None
+        """
+        self._efficiency = efficiency
+        self._mass = mass
+
     @property
     @abstractmethod
     def mass(self) -> float:

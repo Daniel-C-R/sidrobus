@@ -1,6 +1,11 @@
 """Module for Bus class."""
 
+import numpy as np
+from numpy import typing as npt
+
 from sidrobus.bus.engine.abstract_engine import AbstractEngine
+from sidrobus.constants import EARTH_GRAVITY
+from sidrobus.route import Route
 
 
 class Bus:
@@ -38,3 +43,74 @@ class Bus:
         self._mass = mass
         self._aerodynamic_drag_coef = aerodynamic_drag_coef
         self._rolling_resistance_coef = rolling_resistance_coef
+
+    def _compute_route_rolling_resistance(self) -> float:
+        """Computes the rolling resistance of the bus.
+
+        Returns:
+            float: The rolling resistance of the bus.
+        """
+        return self._rolling_resistance_coef * self._mass * EARTH_GRAVITY
+
+    def _compute_route_aerodynamic_drag(self, route: Route) -> npt.NDArray[np.float64]:
+        """Computes the aerodynamic drag for a given route.
+
+        Args:
+            route (Route): The route of the bus.
+
+        Returns:
+            float: The aerodynamic drag of the bus.
+        """
+        return (
+            0.5
+            * self._aerodynamic_drag_coef
+            * self._frontal_area
+            * route.avg_velocities**2
+        )
+
+    def _compute_route_hill_climb_resistance(
+        self, route: Route
+    ) -> npt.NDArray[np.float64]:
+        """Computes the hill climb resistance for a given route.
+
+        Args:
+            route (Route): The route of the bus.
+
+        Returns:
+            npt.NDArray[np.float64]: The hill climb resistance of the bus.
+        """
+        return self._mass * EARTH_GRAVITY * np.sin(route.angles)
+
+    def _compute_linear_aceleration_force(
+        self, route: Route
+    ) -> npt.NDArray[np.float64]:
+        """Computes the linear acceleration force for a given route.
+
+        Args:
+            route (Route): The route of the bus.
+
+        Returns:
+            npt.NDArray[np.float64]: The linear acceleration force of the bus.
+        """
+        return self._mass * route.accelerations
+
+    def _calculate_route_forces(self, route: Route) -> npt.NDArray[np.float64]:
+        """Calculates the forces acting on the bus during a route.
+
+        Args:
+            route (Route): The route of the bus.
+
+        Returns:
+            npt.NDArray[np.float64]: The forces acting on the bus.
+        """
+        rolling_resistance = self._compute_route_rolling_resistance()
+        aerodynamic_drag = self._compute_route_aerodynamic_drag(route)
+        hill_climb_resistance = self._compute_route_hill_climb_resistance(route)
+        linear_acceleration_force = self._compute_linear_aceleration_force(route)
+
+        return (
+            rolling_resistance
+            + aerodynamic_drag
+            + hill_climb_resistance
+            + 1.05 * linear_acceleration_force  # 5% for rotational acceleration
+        )
