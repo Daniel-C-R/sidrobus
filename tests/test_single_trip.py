@@ -55,3 +55,10 @@ def test_accelerations_calculation(test_route: Route) -> None:
     route = test_route
     expected_accelerations = np.array([1, 2, 1, -2], dtype=float)
     np.testing.assert_array_almost_equal(route.accelerations, expected_accelerations)
+
+
+def test_avg_velocities_calculation(test_route: Route) -> None:
+    """Test the route average velocities calculation."""
+    route = test_route
+    expected_avg_velocities = np.array([0.5, 2, 3.5, 3])
+    np.testing.assert_array_almost_equal(route.avg_velocities, expected_avg_velocities)

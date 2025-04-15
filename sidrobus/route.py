@@ -128,6 +128,16 @@ class Route:
         return np.arctan2(height_differences, horizontal_distances)
 
     @property
+    def avg_velocities(self) -> npt.NDArray[np.float64]:
+        """Calculates the average velocities between consecutive points along the route.
+
+        Returns:
+            npt.NDArray[np.float64]: Array of average velocities between consecutive
+                points.
+        """
+        return (self._velocities[:-1] + self._velocities[1:]) / 2
+
+    @property
     def accelerations(self) -> npt.NDArray[np.float64]:
         """Calculates the accelerations between consecutive points along the route.
 
