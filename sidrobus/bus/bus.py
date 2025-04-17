@@ -114,3 +114,21 @@ class Bus:
             + hill_climb_resistance
             + 1.05 * linear_acceleration_force  # 5% for rotational acceleration
         )
+
+    def _calculate_route_energy_consumption(
+        self, route: Route
+    ) -> npt.NDArray[np.float64]:
+        """Calculate the energy consumption for a given route.
+
+        This method computes the forces acting on the bus throughout the route
+        and uses the engine model to calculate the total energy consumption.
+
+        Args:
+            route (Route): The route for which the energy consumption is to be
+                calculated.
+
+        Returns:
+            float: The total energy consumption for the route.
+        """
+        forces = self._calculate_route_forces(route)
+        return self._engine.calculate_route_consumptions(forces, route)

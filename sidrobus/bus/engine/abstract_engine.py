@@ -2,6 +2,11 @@
 
 from abc import ABC, abstractmethod
 
+import numpy as np
+from numpy.typing import NDArray
+
+from sidrobus.route import Route
+
 
 class AbstractEngine(ABC):
     """Abstract class representing an engine.
@@ -32,3 +37,21 @@ class AbstractEngine(ABC):
     def mass(self) -> float:
         """Returns the mass of the engine."""
         return self._mass
+
+    @abstractmethod
+    def calculate_route_consumptions(
+        self, tractive_efforts: NDArray[np.float64], route: Route
+    ) -> NDArray[np.float64]:
+        """Calculate the energy consumption for a given route based on tractive efforts.
+
+        Args:
+            tractive_efforts (NDArray[np.float64]): An array of tractive effort values
+                (force applied by the vehicle) at different points along the route.
+            route (Route): An object representing the route, including details such as
+                distance, elevation profile, and other relevant parameters.
+
+        Returns:
+            None: This method is intended to be implemented by subclasses and does not
+                return a value in its abstract form.
+        """
+        pass

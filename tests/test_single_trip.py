@@ -128,3 +128,17 @@ def test_tractive_effort_calculations(test_fuel_bus: Bus, test_route: Route) -> 
     np.testing.assert_allclose(
         calculated_tractive_effort, expected_tractive_effort, rtol=1e-1
     )
+
+
+def test_consumption_calculation(test_fuel_bus: Bus, test_route: Route) -> None:
+    """Test the consumption calculation."""
+    route = test_route
+    bus = test_fuel_bus
+    tractive_efforts = bus._calculate_route_forces(route)  # noqa: SLF001
+    expected_consumption = np.array(
+        [279331.7308, 396501.7932, -584127.0413, 453568.6986]
+    )
+    calculated_consumption = bus._engine.calculate_route_consumptions(  # noqa: SLF001
+        tractive_efforts, route
+    )
+    np.testing.assert_allclose(calculated_consumption, expected_consumption, rtol=1e-1)
