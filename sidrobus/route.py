@@ -7,6 +7,8 @@ sea level for each point along the route.
 import numpy as np
 from numpy import typing as npt
 
+from sidrobus.constants import EARTH_RADIUS
+
 
 class Route:
     """Represents a bus route as a polyline.
@@ -96,36 +98,33 @@ class Route:
 
     @property
     def distances(self) -> npt.NDArray[np.float64]:
-        """Calculates the distances between consecutive points along the route.
+        """Calculate the distances between consecutive points in a 3D space.
+
+        This method computes the distances between consecutive points defined by
+        their latitude, longitude, and height. The calculation takes into account
+        the curvature of the Earth and uses the Pythagorean theorem to combine
+        horizontal and vertical distances.
 
         Returns:
-            npt.NDArray[np.float64]: Array of distances between consecutive points.
+            npt.NDArray[np.float64]: A NumPy array containing the distances
+                between consecutive points in meters.
         """
-        # Calculate differences in heights and horizontal distances
-        height_differences = np.diff(self._heights)
-        horizontal_distances = np.sqrt(
-            np.diff(self._longitudes) ** 2 + np.diff(self._latitudes) ** 2
+        # Convert latitude and longitude differences to meters
+        lat_differences = np.radians(np.diff(self._latitudes)) * EARTH_RADIUS
+        lon_differences = (
+            np.radians(np.diff(self._longitudes))
+            * EARTH_RADIUS
+            * np.cos(np.radians(self._latitudes[:-1]))
         )
+
+        # Calculate horizontal distances
+        horizontal_distances = np.sqrt(lon_differences**2 + lat_differences**2)
+
+        # Calculate differences in heights
+        height_differences = np.diff(self._heights)
 
         # Calculate distances using Pythagorean theorem
         return np.sqrt(height_differences**2 + horizontal_distances**2)
-
-    @property
-    def angles(self) -> npt.NDArray[np.float64]:
-        """Calculates the angles between consecutive points along the route.
-
-        Returns:
-            npt.NDArray[np.float64]: Array of angles (in radians) between consecutive
-                points.
-        """
-        # Calculate differences in heights and horizontal distances
-        height_differences = np.diff(self._heights)
-        horizontal_distances = np.sqrt(
-            np.diff(self._longitudes) ** 2 + np.diff(self._latitudes) ** 2
-        )
-
-        # Calculate angles using arctan
-        return np.arctan2(height_differences, horizontal_distances)
 
     @property
     def avg_velocities(self) -> npt.NDArray[np.float64]:
