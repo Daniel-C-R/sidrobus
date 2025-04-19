@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from sidrobus.bus.bus import Bus
+from sidrobus.bus import Bus
 from sidrobus.bus.engine.fuel_engine import FuelEngine
 from sidrobus.route import Route
 

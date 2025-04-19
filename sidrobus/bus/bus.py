@@ -3,7 +3,7 @@
 import numpy as np
 from numpy import typing as npt
 
-from sidrobus.bus.engine.abstract_engine import AbstractEngine
+from sidrobus.bus.engine import AbstractEngine
 from sidrobus.constants import EARTH_GRAVITY
 from sidrobus.route import Route
 
