@@ -32,7 +32,10 @@ class FuelEngine(AbstractEngine):
         return self._mass
 
     def calculate_route_consumptions(
-        self, tractive_efforts: NDArray[np.float64], route: Route
+        self,
+        tractive_efforts: NDArray[np.float64],
+        route: Route,
+        bus_mass: float,  # noqa: ARG002
     ) -> NDArray[np.float64]:
         """Calculate the fuel consumption for a given route based on tractive efforts.
 
@@ -41,6 +44,8 @@ class FuelEngine(AbstractEngine):
                 applied at different points along the route.
             route (Route): The route object containing information such as distances
                 for each segment of the route.
+            bus_mass (float): The mass of the bus. For fuel engines, this is not used
+                in the calculation.
 
         Returns:
             NDArray[np.float64]: An array of fuel consumption values corresponding

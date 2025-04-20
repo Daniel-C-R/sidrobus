@@ -40,7 +40,7 @@ class AbstractEngine(ABC):
 
     @abstractmethod
     def calculate_route_consumptions(
-        self, tractive_efforts: NDArray[np.float64], route: Route
+        self, tractive_efforts: NDArray[np.float64], route: Route, bus_mass: float
     ) -> NDArray[np.float64]:
         """Calculate the energy consumption for a given route based on tractive efforts.
 
@@ -49,6 +49,8 @@ class AbstractEngine(ABC):
                 (force applied by the vehicle) at different points along the route.
             route (Route): An object representing the route, including details such as
                 distance, elevation profile, and other relevant parameters.
+            bus_mass (float): The mass of the bus, which may affect the energy
+                consumption.
 
         Returns:
             None: This method is intended to be implemented by subclasses and does not

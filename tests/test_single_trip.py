@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from sidrobus.bus import Bus
-from sidrobus.bus.engine.fuel_engine import FuelEngine
+from sidrobus.bus.engine import ElectricEngine, FuelEngine
 from sidrobus.route import Route
 
 
@@ -33,6 +33,28 @@ def test_fuel_bus() -> Bus:
     engine = FuelEngine(
         efficiency=0.2,
         mass=0,  # For fuel buses the engine mass is not considered
+    )
+    return Bus(
+        engine=engine,
+        frontal_area=7.65,
+        mass=19500,
+        aerodynamic_drag_coef=0.25,
+        rolling_resistance_coef=0.01,
+    )
+
+
+@pytest.fixture
+def test_electric_bus() -> Bus:
+    """Fixture to generate an example electric bus.
+
+    For making the tests easier, the parameters of the electric bus are the same as
+    the fuel bus (Mercedes-Benz Citaro), but the engine ones are from its electric
+    version, the eCitaro.
+    """
+    engine = ElectricEngine(
+        efficiency=0.9,
+        mass=0,  # TODO: Add mass for the electric engine in the future
+        regenerative_braking_efficiency=0.5,
     )
     return Bus(
         engine=engine,
@@ -142,4 +164,32 @@ def test_fuel_bus_consumption_calculation(
     calculated_consumption = bus._calculate_route_energy_consumption(  # noqa: SLF001
         route
     )
+    np.testing.assert_allclose(calculated_consumption, expected_consumption, rtol=1e-1)
+
+
+def test_regenerative_braking_calculation(
+    test_electric_bus: Bus, test_route: Route
+) -> None:
+    """Test the regenerative braking calculation."""
+    route = test_route
+    bus = test_electric_bus
+    expected_regenerative_braking = np.array([0, 0, -3402.75, 0])
+    calculated_regenerative_braking = bus._engine._compute_regenerative_braking(  # noqa: SLF001 # type: ignore
+        route, bus.mass
+    )
+    np.testing.assert_allclose(
+        calculated_regenerative_braking, expected_regenerative_braking
+    )
+
+
+def test_electric_bus_consumption_calculation(
+    test_electric_bus: Bus, test_route: Route
+) -> None:
+    """Test the energy consumption calculation for an electric bus on a given route."""
+    route = test_route
+    bus = test_electric_bus
+    expected_consumption = np.array(
+        [62073.71794, 88111.50959, -133208.7592, 100793.0441]
+    )
+    calculated_consumption = bus._calculate_route_energy_consumption(route)  # noqa: SLF001
     np.testing.assert_allclose(calculated_consumption, expected_consumption, rtol=1e-1)

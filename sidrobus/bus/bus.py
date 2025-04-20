@@ -44,6 +44,11 @@ class Bus:
         self._aerodynamic_drag_coef = aerodynamic_drag_coef
         self._rolling_resistance_coef = rolling_resistance_coef
 
+    @property
+    def mass(self) -> float:
+        """Returns the mass of the bus."""
+        return self._mass
+
     def _compute_route_rolling_resistance(self) -> float:
         """Computes the rolling resistance of the bus.
 
@@ -131,4 +136,4 @@ class Bus:
             float: The total energy consumption for the route.
         """
         forces = self._calculate_route_forces(route)
-        return self._engine.calculate_route_consumptions(forces, route)
+        return self._engine.calculate_route_consumptions(forces, route, self._mass)
