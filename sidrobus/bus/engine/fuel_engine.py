@@ -14,17 +14,26 @@ class FuelEngine(AbstractEngine):
     engine.
     """
 
-    def __init__(self, efficiency: float, mass: float) -> None:
+    def __init__(
+        self,
+        efficiency: float,
+        capacity: float,
+        mass: float,
+        energy: float | None = None,
+    ) -> None:
         """Initializes a FuelEngine object with efficiency, mass, energy, and capacity.
 
         Args:
             efficiency (float): Efficiency of the engine.
+            capacity (float): Maximum energy capacity of the engine in Joules.
             mass (float): Mass of the engine.
+            energy (float, optional): Current energy level of the engine in Joules.
+                Defaults to None, which means the engine is fully charged.
 
         Returns:
             None
         """
-        super().__init__(efficiency, mass)
+        super().__init__(efficiency, capacity, mass, energy)
 
     @property
     def mass(self) -> float:
@@ -51,6 +60,10 @@ class FuelEngine(AbstractEngine):
             NDArray[np.float64]: An array of fuel consumption values corresponding
                 to each segment of the route.
         """
-        return (tractive_efforts * route.distances / self._efficiency).astype(
+        consumptions = (tractive_efforts * route.distances / self._efficiency).astype(
             np.float64
         )
+
+        self._energy -= consumptions.sum()
+
+        return consumptions

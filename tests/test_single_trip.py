@@ -33,6 +33,7 @@ def test_fuel_bus() -> Bus:
     engine = FuelEngine(
         efficiency=0.2,
         mass=0,  # For fuel buses the engine mass is not considered
+        capacity=9.3236e9,
     )
     return Bus(
         engine=engine,
@@ -55,6 +56,7 @@ def test_electric_bus() -> Bus:
         efficiency=0.9,
         mass=0,  # TODO: Add mass for the electric engine in the future
         regenerative_braking_efficiency=0.5,
+        capacity=1.411e9,
     )
     return Bus(
         engine=engine,
@@ -143,9 +145,7 @@ def test_tractive_effort_calculations(test_fuel_bus: Bus, test_route: Route) -> 
     """Test the tractive effort calculation."""
     route = test_route
     bus = test_fuel_bus
-    expected_tractive_effort = np.array(
-        [4064.973722, 9832.035586, -5964.244605, 11250.58728]
-    )
+    expected_tractive_effort = np.array([4064.973722, 9832.035586, 0, 11250.58728])
     calculated_tractive_effort = bus._calculate_route_forces(route)  # noqa: SLF001
     np.testing.assert_allclose(
         calculated_tractive_effort, expected_tractive_effort, rtol=1e-1
@@ -158,9 +158,7 @@ def test_fuel_bus_consumption_calculation(
     """Test the consumption calculation."""
     route = test_route
     bus = test_fuel_bus
-    expected_consumption = np.array(
-        [279331.7308, 396501.7932, -584127.0413, 453568.6986]
-    )
+    expected_consumption = np.array([279331.7308, 396501.7932, 0, 453568.6986])
     calculated_consumption = bus._calculate_route_energy_consumption(  # noqa: SLF001
         route
     )
@@ -188,8 +186,6 @@ def test_electric_bus_consumption_calculation(
     """Test the energy consumption calculation for an electric bus on a given route."""
     route = test_route
     bus = test_electric_bus
-    expected_consumption = np.array(
-        [62073.71794, 88111.50959, -133208.7592, 100793.0441]
-    )
+    expected_consumption = np.array([62073.71794, 88111.50959, -3402.75, 100793.0441])
     calculated_consumption = bus._calculate_route_energy_consumption(route)  # noqa: SLF001
     np.testing.assert_allclose(calculated_consumption, expected_consumption, rtol=1e-1)

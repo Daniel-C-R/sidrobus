@@ -18,22 +18,26 @@ class ElectricEngine(AbstractEngine):
 
     def __init__(
         self,
-        efficiency: float = 0.9,
-        mass: float = 1000,
-        regenerative_braking_efficiency: float = 0.5,
+        efficiency: float,
+        capacity: float,
+        mass: float,
+        regenerative_braking_efficiency: float,
+        energy: float | None = None,
     ) -> None:
         """Initialize an ElectricEngine instance.
 
         Args:
             efficiency (float, optional): The efficiency of the engine, represented as a
-                value between 0 and 1.  Defaults to 0.9.
-            mass (float, optional): The mass of the engine in kilograms. Defaults to
-                1000.
+                value between 0 and 1.
+            mass (float, optional): The mass of the engine in kilograms.
+            capacity (float, optional): The maximum energy capacity of the engine in
+                Joules.
             regenerative_braking_efficiency (float, optional): The efficiency of the
                 regenerative braking system, represented as a value between 0 and 1.
-                Defaults to 0.5.
+            energy (float, optional): The current energy level of the engine in Joules.
+                Defaults to None, which means the engine starts with full capacity.
         """
-        super().__init__(efficiency, mass)
+        super().__init__(efficiency, capacity, mass, energy)
         self._regenerative_braking_efficiency = regenerative_braking_efficiency
 
     @property
@@ -97,6 +101,10 @@ class ElectricEngine(AbstractEngine):
         tractive_effort_energy = (
             tractive_efforts * route.distances / self._efficiency
         ).astype(np.float64)
-        return tractive_effort_energy + self._compute_regenerative_braking(
-            route, bus_mass
+        energy_consumption = (
+            tractive_effort_energy + self._compute_regenerative_braking(route, bus_mass)
         )
+
+        self._energy -= np.sum(energy_consumption)
+
+        return energy_consumption

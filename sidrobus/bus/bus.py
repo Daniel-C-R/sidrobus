@@ -84,7 +84,11 @@ class Bus:
         Returns:
             npt.NDArray[np.float64]: The hill climb resistance of the bus.
         """
-        return self._mass * EARTH_GRAVITY * np.diff(route.heights) / route.distances
+        resistance = (
+            self._mass * EARTH_GRAVITY * np.diff(route.heights) / route.distances
+        )
+        resistance[route.distances == 0] = 0
+        return resistance
 
     def _compute_linear_acceleration_force(
         self, route: Route
@@ -113,12 +117,15 @@ class Bus:
         hill_climb_resistance = self._compute_route_hill_climb_resistance(route)
         linear_acceleration_force = self._compute_linear_acceleration_force(route)
 
-        return (
+        tractive_effort = (
             rolling_resistance
             + aerodynamic_drag
             + hill_climb_resistance
             + 1.05 * linear_acceleration_force  # 5% for rotational acceleration
         )
+
+        tractive_effort[tractive_effort < 0] = 0
+        return tractive_effort
 
     def _calculate_route_energy_consumption(
         self, route: Route
