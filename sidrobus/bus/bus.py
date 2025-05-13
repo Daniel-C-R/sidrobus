@@ -11,14 +11,18 @@ from sidrobus.route import Route
 class Bus:
     """Class representing a bus."""
 
+    _model_name: str
+    _model_manufacturer: str
     _engine: AbstractEngine
     _mass: float
     _frontal_area: float
     _aerodynamic_drag_coef: float
     _rolling_resistance_coef: float
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
+        model_name: str,
+        model_manufacturer: str,
         engine: AbstractEngine,
         frontal_area: float,
         mass: float,
@@ -28,6 +32,8 @@ class Bus:
         """Initializes a Bus object with an engine, frontal area, and mass.
 
         Args:
+            model_name (str): The name of the bus model.
+            model_manufacturer (str): The manufacturer of the bus model.
             engine (AbstractEngine): The engine of the bus.
             frontal_area (float): The frontal area of the bus.
             mass (float): The mass of the bus.
@@ -38,6 +44,8 @@ class Bus:
         Returns:
             None
         """
+        self._model_name = model_name
+        self._model_manufacturer = model_manufacturer
         self._engine = engine
         self._frontal_area = frontal_area
         self._mass = mass
