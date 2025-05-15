@@ -31,7 +31,22 @@ ELECTRIC_BUSES = {
             "regenerative_braking_efficiency": 0.5,
         },
     },
+    "Urbino12e": {
+        "name": "Urbino 12 Electric",
+        "manufacturer": "Solaris",
+        "mass": 18_745,
+        "rolling_resistance_coef": 0.005,
+        "frontal_area": 8.415,
+        "aerodynamic_drag_coef": 0.25,
+        "engine_params": {
+            "efficiency": 0.9,
+            "capacity": kwh_to_joules(422),
+            "mass": 0,
+            "regenerative_braking_efficiency": 0.5,
+        },
+    },
 }
+
 
 FUEL_BUSES = {
     "Citaro": {
