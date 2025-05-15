@@ -6,63 +6,60 @@ import pytest
 from sidrobus.bus import Bus
 from sidrobus.bus.engine import ElectricEngine, FuelEngine
 from sidrobus.route import Route
+from sidrobus.unit_conversions import kwh_to_joules
 
 
 @pytest.fixture
 def test_route() -> Route:
-    """Fixture to generate an example route.
-
-    This example route are five points taken with the MatLab mobile app, near the
-    Polytechnical School of Gijón, on board of a Solaris Urbino 12 electric bus.
-    """
-    times = np.array([1, 2, 3, 4, 5])
-    longitudes = np.array([-5.6339, -5.634, -5.6341, -5.6343, -5.6344])
-    latitudes = np.array([43.5237, 43.5236, 43.5236, 43.5235, 43.5235])
-    heights = np.array([66.044, 65.564, 65.349, 65.266, 65.343])
-    velocities = np.array([8.235, 8.663, 9.295, 8.946, 9.309])
+    """Fixture to generate an example route."""
+    times = np.array([1323.017, 1356.017, 1359.017, 1362.017, 1372.017])
+    longitudes = np.array(
+        [-5.8440438, -5.84410455, -5.84418669, -5.84425666, -5.84433499]
+    )
+    latitudes = np.array(
+        [43.36878569, 43.36867881, 43.36857426, 43.36847559, 43.3683948]
+    )
+    heights = np.array([261.74, 267.84, 265.21, 262.04, 261.29])
+    velocities = np.array([2.25, 3.59, 4.5, 4, 0.52])
 
     return Route(times, longitudes, latitudes, heights, velocities)
 
 
 @pytest.fixture
 def test_fuel_bus() -> Bus:
-    """Fixture to generate an example fuel bus.
-
-    The parameters are taken from a Mercedes-Benz Citaro fuel bus.
-    """
+    """Fixture to generate an example fuel bus."""
     engine = FuelEngine(
-        efficiency=0.2,
+        efficiency=0.35,
         mass=0,  # For fuel buses the engine mass is not considered
         capacity=9.3236e9,
     )
     return Bus(
+        model_name="Test Fuel Bus",
+        model_manufacturer="None",
         engine=engine,
-        frontal_area=7.65,
-        mass=19500,
-        aerodynamic_drag_coef=0.25,
+        frontal_area=8.67,
+        mass=13500,
+        aerodynamic_drag_coef=0.6,
         rolling_resistance_coef=0.01,
     )
 
 
 @pytest.fixture
 def test_electric_bus() -> Bus:
-    """Fixture to generate an example electric bus.
-
-    For making the tests easier, the parameters of the electric bus are the same as
-    the fuel bus (Mercedes-Benz Citaro), but the engine ones are from its electric
-    version, the eCitaro.
-    """
+    """Fixture to generate an example electric bus."""
     engine = ElectricEngine(
         efficiency=0.9,
         mass=0,  # TODO: Add mass for the electric engine in the future
         regenerative_braking_efficiency=0.5,
-        capacity=1.411e9,
+        capacity=kwh_to_joules(686),
     )
     return Bus(
+        model_name="Test Electric Bus",
+        model_manufacturer="None",
         engine=engine,
-        frontal_area=7.65,
-        mass=19500,
-        aerodynamic_drag_coef=0.25,
+        frontal_area=8.67,
+        mass=13500,
+        aerodynamic_drag_coef=0.6,
         rolling_resistance_coef=0.01,
     )
 
@@ -74,29 +71,29 @@ def test_route_distances_calculation(test_route: Route) -> None:
     more precise, but the difference is minimal.
     """
     route = test_route
-    expected_distances = np.array([13.74334743, 8.06550769, 19.58762861, 8.06302262])
-    np.testing.assert_array_almost_equal(route.distances, expected_distances, decimal=5)
+    expected_distances = np.array([14.233, 13.644, 12.744, 11.016])
+    np.testing.assert_allclose(route.distances, expected_distances, rtol=1e-4)
 
 
 def test_accelerations_calculation(test_route: Route) -> None:
     """Test the route accelerations calculation."""
     route = test_route
-    expected_accelerations = np.array([0.428, 0.632, -0.349, 0.363])
+    expected_accelerations = np.array([0.040606061, 0.303333333, -0.166666667, -0.348])
     np.testing.assert_array_almost_equal(route.accelerations, expected_accelerations)
 
 
 def test_avg_velocities_calculation(test_route: Route) -> None:
     """Test the route average velocities calculation."""
     route = test_route
-    expected_avg_velocities = np.array([8.449, 8.979, 9.1205, 9.1275])
+    expected_avg_velocities = np.array([2.92, 4.045, 4.25, 2.26])
     np.testing.assert_array_almost_equal(route.avg_velocities, expected_avg_velocities)
 
 
 def test_rolling_resistance_calculation(test_fuel_bus: Bus) -> None:
     """Test the rolling resistance calculation."""
     bus = test_fuel_bus
-    expected_rolling_resistance = 1912.29675
-    calculated_rolling_resistance = bus._compute_route_rolling_resistance()  # noqa: SLF001
+    expected_rolling_resistance = 1324.35
+    calculated_rolling_resistance = bus.compute_route_rolling_resistance()
     np.testing.assert_almost_equal(
         calculated_rolling_resistance, expected_rolling_resistance
     )
@@ -107,9 +104,9 @@ def test_aerodynamic_drag_calculation(test_fuel_bus: Bus, test_route: Route) -> 
     route = test_route
     bus = test_fuel_bus
     expected_aerodynamic_drag = np.array(
-        [68.26248096, 77.09520921, 79.54424124, 79.66638879]
+        [27.721458, 53.19703378, 58.72570313, 16.6060845]
     )
-    calculated_aerodynamic_drag = bus._compute_route_aerodynamic_drag(route)  # noqa: SLF001
+    calculated_aerodynamic_drag = bus.compute_route_aerodynamic_drag(route)
     np.testing.assert_allclose(calculated_aerodynamic_drag, expected_aerodynamic_drag)
 
 
@@ -120,9 +117,9 @@ def test_hill_climb_resistance_calculation(
     route = test_route
     bus = test_fuel_bus
     expected_hill_climb_resistance = np.array(
-        [-6678.885509, -5097.556373, -810.3105966, 1826.19914]
+        [40922.415, -25528.43829, -32941.99428, -9016.444815]
     )
-    calculated_hill_climb_resistance = bus._compute_route_hill_climb_resistance(route)  # noqa: SLF001
+    calculated_hill_climb_resistance = bus.compute_route_hill_climb_resistance(route)
     np.testing.assert_allclose(
         calculated_hill_climb_resistance, expected_hill_climb_resistance, rtol=1e-1
     )
@@ -134,8 +131,8 @@ def test_linear_acceleration_force_calculations(
     """Test the linear acceleration force calculation."""
     route = test_route
     bus = test_fuel_bus
-    expected_linear_acceleration_force = np.array([8346, 12324, -6805.5, 7078.5])
-    calculated_linear_acceleration_force = bus._compute_linear_acceleration_force(route)  # noqa: SLF001
+    expected_linear_acceleration_force = np.array([548.1818182, 4095, -2250, -4698])
+    calculated_linear_acceleration_force = bus.compute_linear_acceleration_force(route)
     np.testing.assert_allclose(
         calculated_linear_acceleration_force, expected_linear_acceleration_force
     )
@@ -145,8 +142,8 @@ def test_tractive_effort_calculations(test_fuel_bus: Bus, test_route: Route) -> 
     """Test the tractive effort calculation."""
     route = test_route
     bus = test_fuel_bus
-    expected_tractive_effort = np.array([4064.973722, 9832.035586, 0, 11250.58728])
-    calculated_tractive_effort = bus._calculate_route_forces(route)  # noqa: SLF001
+    expected_tractive_effort = np.array([42850.07737, 0, 0, 0])
+    calculated_tractive_effort = bus.calculate_route_forces(route)
     np.testing.assert_allclose(
         calculated_tractive_effort, expected_tractive_effort, rtol=1e-1
     )
@@ -158,8 +155,8 @@ def test_fuel_bus_consumption_calculation(
     """Test the consumption calculation."""
     route = test_route
     bus = test_fuel_bus
-    expected_consumption = np.array([279331.7308, 396501.7932, 0, 453568.6986])
-    calculated_consumption = bus._calculate_route_energy_consumption(  # noqa: SLF001
+    expected_consumption = np.array([1.18223e08, 0, 0, 0])
+    calculated_consumption = bus.calculate_route_energy_consumption(
         route
     )
     np.testing.assert_allclose(calculated_consumption, expected_consumption, rtol=1e-1)
@@ -171,9 +168,16 @@ def test_regenerative_braking_calculation(
     """Test the regenerative braking calculation."""
     route = test_route
     bus = test_electric_bus
-    expected_regenerative_braking = np.array([0, 0, -3402.75, 0])
-    calculated_regenerative_braking = bus._engine._compute_regenerative_braking(  # noqa: SLF001 # type: ignore
-        route, bus.mass
+    expected_regenerative_braking = np.array(
+        [0, -174152.025, -224963.5464, -76833.83744]
+    )
+    if not isinstance(bus._engine, ElectricEngine):  # noqa: SLF001
+        pytest.skip("This test is only applicable for electric buses.")
+
+    calculated_regenerative_braking = bus._engine.compute_regenerative_braking(  # noqa: SLF001
+        bus.compute_route_hill_climb_resistance(route),
+        bus.compute_linear_acceleration_force(route),
+        route,
     )
     np.testing.assert_allclose(
         calculated_regenerative_braking, expected_regenerative_braking
@@ -186,6 +190,6 @@ def test_electric_bus_consumption_calculation(
     """Test the energy consumption calculation for an electric bus on a given route."""
     route = test_route
     bus = test_electric_bus
-    expected_consumption = np.array([62073.71794, 88111.50959, -3402.75, 100793.0441])
-    calculated_consumption = bus._calculate_route_energy_consumption(route)  # noqa: SLF001
+    expected_consumption = np.array([6.77629e05, 88111.50959, -3402.75, 100793.0441])
+    calculated_consumption = bus.calculate_route_energy_consumption(route)
     np.testing.assert_allclose(calculated_consumption, expected_consumption, rtol=1e-1)

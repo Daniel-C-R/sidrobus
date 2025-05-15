@@ -98,33 +98,39 @@ class Route:
 
     @property
     def distances(self) -> npt.NDArray[np.float64]:
-        """Calculate the distances between consecutive points in a 3D space.
+        """Calculates the distances between consecutive points along the route.
+
+        Calculate the distances between consecutive points in a 3D space using the
+        haversine formula.
 
         This method computes the distances between consecutive points defined by
-        their latitude, longitude, and height. The calculation takes into account
-        the curvature of the Earth and uses the Pythagorean theorem to combine
+        their latitude, longitude, and height. The calculation uses the haversine
+        formula for horizontal distance and the Pythagorean theorem to combine
         horizontal and vertical distances.
 
         Returns:
             npt.NDArray[np.float64]: A NumPy array containing the distances
                 between consecutive points in meters.
         """
-        # Convert latitude and longitude differences to meters
-        lat_differences = np.radians(np.diff(self._latitudes)) * EARTH_RADIUS
-        lon_differences = (
-            np.radians(np.diff(self._longitudes))
-            * EARTH_RADIUS
-            * np.cos(np.radians(self._latitudes[:-1]))
-        )
+        # Convert degrees to radians
+        lat_rad = np.radians(self._latitudes)
+        lon_rad = np.radians(self._longitudes)
 
-        # Calculate horizontal distances
-        horizontal_distances = np.sqrt(lon_differences**2 + lat_differences**2)
+        dlat = np.diff(lat_rad)
+        dlon = np.diff(lon_rad)
+
+        lat1 = lat_rad[:-1]
+        lat2 = lat_rad[1:]
+
+        a = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
+        c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
+        horizontal_distances = EARTH_RADIUS * c
 
         # Calculate differences in heights
         height_differences = np.diff(self._heights)
 
         # Calculate distances using Pythagorean theorem
-        return np.sqrt(height_differences**2 + horizontal_distances**2)
+        return np.sqrt(horizontal_distances**2 + height_differences**2)
 
     @property
     def avg_velocities(self) -> npt.NDArray[np.float64]:
@@ -143,4 +149,5 @@ class Route:
         Returns:
             npt.NDArray[np.float64]: Array of accelerations between consecutive points.
         """
-        return np.diff(self._velocities) / np.diff(self._times)
+        accelerations = np.diff(self._velocities) / np.diff(self._times)
+        return np.clip(accelerations, -2, 2)

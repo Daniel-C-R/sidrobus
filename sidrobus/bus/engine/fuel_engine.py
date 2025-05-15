@@ -43,8 +43,9 @@ class FuelEngine(AbstractEngine):
     def calculate_route_consumptions(
         self,
         tractive_efforts: NDArray[np.float64],
+        hill_climb_resistances: NDArray[np.float64],  # noqa: ARG002
+        linear_acceleration_forces: NDArray[np.float64],  # noqa: ARG002
         route: Route,
-        bus_mass: float,  # noqa: ARG002
     ) -> NDArray[np.float64]:
         """Calculate the fuel consumption for a given route based on tractive efforts.
 

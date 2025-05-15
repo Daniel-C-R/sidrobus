@@ -4,7 +4,7 @@ import numpy as np
 from numpy import typing as npt
 
 from sidrobus.bus.engine import AbstractEngine
-from sidrobus.constants import EARTH_GRAVITY
+from sidrobus.constants import AIR_DENSITY, EARTH_GRAVITY
 from sidrobus.route import Route
 
 
@@ -57,7 +57,7 @@ class Bus:
         """Returns the mass of the bus."""
         return self._mass
 
-    def _compute_route_rolling_resistance(self) -> float:
+    def compute_route_rolling_resistance(self) -> float:
         """Computes the rolling resistance of the bus.
 
         Returns:
@@ -65,7 +65,7 @@ class Bus:
         """
         return self._rolling_resistance_coef * self._mass * EARTH_GRAVITY
 
-    def _compute_route_aerodynamic_drag(self, route: Route) -> npt.NDArray[np.float64]:
+    def compute_route_aerodynamic_drag(self, route: Route) -> npt.NDArray[np.float64]:
         """Computes the aerodynamic drag for a given route.
 
         Args:
@@ -76,12 +76,13 @@ class Bus:
         """
         return (
             0.5
+            * AIR_DENSITY
             * self._aerodynamic_drag_coef
             * self._frontal_area
             * route.avg_velocities**2
         )
 
-    def _compute_route_hill_climb_resistance(
+    def compute_route_hill_climb_resistance(
         self, route: Route
     ) -> npt.NDArray[np.float64]:
         """Computes the hill climb resistance for a given route.
@@ -92,13 +93,17 @@ class Bus:
         Returns:
             npt.NDArray[np.float64]: The hill climb resistance of the bus.
         """
-        resistance = (
-            self._mass * EARTH_GRAVITY * np.diff(route.heights) / route.distances
-        )
-        resistance[route.distances == 0] = 0
-        return resistance
+        with np.errstate(divide="ignore", invalid="ignore"):
+            sines = np.divide(
+                np.diff(route.heights),
+                route.distances,
+                out=np.zeros_like(route.distances, dtype=float),
+                where=route.distances != 0,
+            )
+        sines = np.clip(sines, np.sin(np.deg2rad(-10.2)), np.sin(np.deg2rad(10.2)))
+        return self._mass * EARTH_GRAVITY * sines
 
-    def _compute_linear_acceleration_force(
+    def compute_linear_acceleration_force(
         self, route: Route
     ) -> npt.NDArray[np.float64]:
         """Computes the linear acceleration force for a given route.
@@ -111,7 +116,7 @@ class Bus:
         """
         return self._mass * route.accelerations
 
-    def _calculate_route_forces(self, route: Route) -> npt.NDArray[np.float64]:
+    def calculate_route_forces(self, route: Route) -> npt.NDArray[np.float64]:
         """Calculates the forces acting on the bus during a route.
 
         Args:
@@ -120,22 +125,23 @@ class Bus:
         Returns:
             npt.NDArray[np.float64]: The forces acting on the bus.
         """
-        rolling_resistance = self._compute_route_rolling_resistance()
-        aerodynamic_drag = self._compute_route_aerodynamic_drag(route)
-        hill_climb_resistance = self._compute_route_hill_climb_resistance(route)
-        linear_acceleration_force = self._compute_linear_acceleration_force(route)
+        rolling_resistance = self.compute_route_rolling_resistance()
+        aerodynamic_drag = self.compute_route_aerodynamic_drag(route)
+        hill_climb_resistance = self.compute_route_hill_climb_resistance(route)
+        linear_acceleration_force = self.compute_linear_acceleration_force(route)
 
-        tractive_effort = (
+        mask_hill_climb = hill_climb_resistance > 0
+        mask_linear_acceleration = linear_acceleration_force > 0
+
+        return (
             rolling_resistance
             + aerodynamic_drag
-            + hill_climb_resistance
-            + 1.05 * linear_acceleration_force  # 5% for rotational acceleration
+            + hill_climb_resistance * mask_hill_climb
+            # +5% for rotational acceleration
+            + 1.05 * linear_acceleration_force * mask_linear_acceleration
         )
 
-        tractive_effort[tractive_effort < 0] = 0
-        return tractive_effort
-
-    def _calculate_route_energy_consumption(
+    def calculate_route_energy_consumption(
         self, route: Route
     ) -> npt.NDArray[np.float64]:
         """Calculate the energy consumption for a given route.
@@ -150,5 +156,12 @@ class Bus:
         Returns:
             float: The total energy consumption for the route.
         """
-        forces = self._calculate_route_forces(route)
-        return self._engine.calculate_route_consumptions(forces, route, self._mass)
+        forces = self.calculate_route_forces(route)
+        hill_climb_resistances = self.compute_route_hill_climb_resistance(route)
+        linear_acceleration_forces = self.compute_linear_acceleration_force(route)
+        return self._engine.calculate_route_consumptions(
+            forces,
+            hill_climb_resistances,
+            linear_acceleration_forces,
+            route,
+        )
