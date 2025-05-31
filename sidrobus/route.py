@@ -5,6 +5,7 @@ sea level for each point along the route.
 """
 
 import numpy as np
+import pandas as pd
 from numpy import typing as npt
 
 from sidrobus.constants import EARTH_RADIUS
@@ -50,6 +51,25 @@ class Route:
         self._latitudes = latitudes
         self._heights = heights
         self._velocities = velocities
+
+    @classmethod
+    def from_dataframe(cls, df: pd.DataFrame) -> "Route":
+        """Creates a Route object from a pandas DataFrame.
+
+        Args:
+            df (pd.DataFrame): DataFrame containing columns 'time', 'longitude',
+                'latitude', 'height', and 'velocity'.
+
+        Returns:
+            Route: A Route object initialized with the data from the DataFrame.
+        """
+        return cls(
+            times=df["time"].to_numpy(dtype=np.float64),
+            longitudes=df["longitude"].to_numpy(dtype=np.float64),
+            latitudes=df["latitude"].to_numpy(dtype=np.float64),
+            heights=df["altitude"].to_numpy(dtype=np.float64),
+            velocities=df["speed"].to_numpy(dtype=np.float64),
+        )
 
     @property
     def times(self) -> npt.NDArray[np.float64]:
