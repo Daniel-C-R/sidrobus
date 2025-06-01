@@ -14,6 +14,7 @@ class ElectricEngine(AbstractEngine):
     abstract engine class and implements the methods to calculate energy consumption
     """
 
+    _engine_type: str = "Electric"
     _regenerative_braking_efficiency: float
 
     def __init__(
@@ -48,73 +49,36 @@ class ElectricEngine(AbstractEngine):
         """
         return self._mass
 
-    def compute_regenerative_braking(
+    def compute_route_regeneration(
         self,
-        hill_clim_resistances: npt.NDArray[np.float64],
-        linear_acceleration_forces: npt.NDArray[np.float64],
         route: Route,
+        hill_climb_forces: npt.NDArray[np.float64],
+        linear_acceleration_forces: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
-        """Compute the regenerative braking force for a given route.
+        """Calculate the energy regeneration for a given route.
 
-        This method calculates the regenerative braking force based on the accelerations
-        of the route, the mass of the bus, and the efficiency of the regenerative
-        braking system. Regenerative braking is applied only when the bus is
-        decelerating (negative accelerations).
+        This method computes the energy that can be regenerated during a route
+        based on negative hill climb and linear acceleration forces.
 
         Args:
-            route (Route): The route object containing acceleration data.
-            bus_mass (float): The mass of the bus in kilograms.
+            route (Route): The route for which the regeneration is to be calculated.
+            hill_climb_forces (npt.NDArray[np.float64]): Hill climb resistance
+                forces.
+            linear_acceleration_forces (npt.NDArray[np.float64]): Linear acceleration
+                forces.
 
         Returns:
-            npt.NDArray[np.float64]: An array representing the regenerative
-            braking force applied at each point along the route.
+            npt.NDArray[np.float64]: Array of energy regeneration values for each
+                segment.
         """
-        hill_climb_mask = hill_clim_resistances < 0
+        hill_climb_mask = hill_climb_forces < 0
         linear_acceleration_mask = linear_acceleration_forces < 0
 
         return (
-            hill_clim_resistances * route.distances * hill_climb_mask
-            + 1.05
+            hill_climb_forces
+            * route.distances
+            * hill_climb_mask
             * linear_acceleration_forces
             * route.distances
             * linear_acceleration_mask
         ) * self._regenerative_braking_efficiency
-
-    def calculate_route_consumptions(
-        self,
-        tractive_efforts: npt.NDArray[np.float64],
-        hill_climb_resistances: npt.NDArray[np.float64],
-        linear_acceleration_forces: npt.NDArray[np.float64],
-        route: Route,
-    ) -> npt.NDArray[np.float64]:
-        """Calculate the energy consumption for a bus along a given route.
-
-        This method computes the energy required to overcome tractive efforts along the
-        route, taking into account the efficiency of the electric engine. It also
-        incorporates energy recovered through regenerative braking.
-
-        Args:
-            tractive_efforts (npt.NDArray[np.float64]): An array of tractive efforts (in
-                Newtons) applied at different segments of the route.
-            route (Route): The route object containing information about the distances
-                of each segment.
-            bus_mass (float): The mass of the bus in Kilograms (used for calculating the
-                regenerative braking).
-
-        Returns:
-            npt.NDArray[np.float64]: An array of energy consumptions (in Joules)
-            for each segment of the route, adjusted for regenerative braking.
-        """
-        tractive_effort_energy = (
-            tractive_efforts * route.distances / self._efficiency
-        ).astype(np.float64)
-        energy_consumption = (
-            tractive_effort_energy
-            + self.compute_regenerative_braking(
-                hill_climb_resistances, linear_acceleration_forces, route
-            )
-        )
-
-        self._energy -= np.sum(energy_consumption)
-
-        return energy_consumption

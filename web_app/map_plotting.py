@@ -51,8 +51,8 @@ def plot_route_map(route: Route) -> folium.Map:
     ]
 
     # Altitude (hidden by default)
-    if hasattr(route, "heights"):
-        altitudes = route.heights
+    if hasattr(route, "altitudes"):
+        altitudes = route.altitudes
         colors = color_gradient(altitudes, viridis_colors)
         fg_alt = folium.FeatureGroup(name="Altitude Gradient", show=False)
         for i in range(len(altitudes) - 1):
@@ -68,8 +68,8 @@ def plot_route_map(route: Route) -> folium.Map:
         fg_alt.add_to(m)
 
     # Speed (hidden by default)
-    if hasattr(route, "velocities"):
-        speeds = route.velocities
+    if hasattr(route, "speeds"):
+        speeds = route.speeds
         colors = color_gradient(speeds, viridis_colors)
         fg_speed = folium.FeatureGroup(name="Speed Gradient", show=False)
         for i in range(len(speeds) - 1):
@@ -85,8 +85,8 @@ def plot_route_map(route: Route) -> folium.Map:
         fg_speed.add_to(m)
 
     # Acceleration (hidden by default)
-    if hasattr(route, "velocities") and hasattr(route, "times"):
-        acc = np.diff(route.velocities) / np.diff(route.times)
+    if hasattr(route, "speeds") and hasattr(route, "times"):
+        acc = np.diff(route.speeds) / np.diff(route.times)
         acc = np.clip(acc, -2, 2)
         colors = color_gradient(acc, viridis_colors)
         fg_acc = folium.FeatureGroup(name="Acceleration Gradient", show=False)

@@ -19,10 +19,10 @@ def test_route() -> Route:
     latitudes = np.array(
         [43.36878569, 43.36867881, 43.36857426, 43.36847559, 43.3683948]
     )
-    heights = np.array([261.74, 267.84, 265.21, 262.04, 261.29])
-    velocities = np.array([2.25, 3.59, 4.5, 4, 0.52])
+    altitudes = np.array([261.74, 267.84, 265.21, 262.04, 261.29])
+    speeds = np.array([2.25, 3.59, 4.5, 4, 0.52])
 
-    return Route(times, longitudes, latitudes, heights, velocities)
+    return Route(times, longitudes, latitudes, altitudes, speeds)
 
 
 @pytest.fixture
@@ -82,18 +82,18 @@ def test_accelerations_calculation(test_route: Route) -> None:
     np.testing.assert_array_almost_equal(route.accelerations, expected_accelerations)
 
 
-def test_avg_velocities_calculation(test_route: Route) -> None:
-    """Test the route average velocities calculation."""
+def test_avg_speeds_calculation(test_route: Route) -> None:
+    """Test the route average speeds calculation."""
     route = test_route
-    expected_avg_velocities = np.array([2.92, 4.045, 4.25, 2.26])
-    np.testing.assert_array_almost_equal(route.avg_velocities, expected_avg_velocities)
+    expected_avg_speeds = np.array([2.92, 4.045, 4.25, 2.26])
+    np.testing.assert_array_almost_equal(route.avg_speeds, expected_avg_speeds)
 
 
 def test_rolling_resistance_calculation(test_fuel_bus: Bus) -> None:
     """Test the rolling resistance calculation."""
     bus = test_fuel_bus
     expected_rolling_resistance = 1324.35
-    calculated_rolling_resistance = bus.compute_route_rolling_resistance()
+    calculated_rolling_resistance = bus.compute_route_rolling_resistance_forces()
     np.testing.assert_almost_equal(
         calculated_rolling_resistance, expected_rolling_resistance
     )
@@ -106,7 +106,7 @@ def test_aerodynamic_drag_calculation(test_fuel_bus: Bus, test_route: Route) -> 
     expected_aerodynamic_drag = np.array(
         [27.721458, 53.19703378, 58.72570313, 16.6060845]
     )
-    calculated_aerodynamic_drag = bus.compute_route_aerodynamic_drag(route)
+    calculated_aerodynamic_drag = bus.compute_route_aerodynamic_drag_forces(route)
     np.testing.assert_allclose(calculated_aerodynamic_drag, expected_aerodynamic_drag)
 
 
@@ -119,7 +119,9 @@ def test_hill_climb_resistance_calculation(
     expected_hill_climb_resistance = np.array(
         [40922.415, -25528.43829, -32941.99428, -9016.444815]
     )
-    calculated_hill_climb_resistance = bus.compute_route_hill_climb_resistance(route)
+    calculated_hill_climb_resistance = bus.compute_route_hill_climb_resistance_forces(
+        route
+    )
     np.testing.assert_allclose(
         calculated_hill_climb_resistance, expected_hill_climb_resistance, rtol=1e-1
     )
@@ -132,7 +134,7 @@ def test_linear_acceleration_force_calculations(
     route = test_route
     bus = test_fuel_bus
     expected_linear_acceleration_force = np.array([548.1818182, 4095, -2250, -4698])
-    calculated_linear_acceleration_force = bus.compute_linear_acceleration_force(route)
+    calculated_linear_acceleration_force = bus.compute_linear_acceleration_forces(route)
     np.testing.assert_allclose(
         calculated_linear_acceleration_force, expected_linear_acceleration_force
     )
@@ -143,7 +145,7 @@ def test_tractive_effort_calculations(test_fuel_bus: Bus, test_route: Route) -> 
     route = test_route
     bus = test_fuel_bus
     expected_tractive_effort = np.array([42850.07737, 0, 0, 0])
-    calculated_tractive_effort = bus.calculate_route_forces(route)
+    calculated_tractive_effort = bus.compute_route_tractive_efforts(route)
     np.testing.assert_allclose(
         calculated_tractive_effort, expected_tractive_effort, rtol=1e-1
     )
@@ -156,9 +158,7 @@ def test_fuel_bus_consumption_calculation(
     route = test_route
     bus = test_fuel_bus
     expected_consumption = np.array([1.18223e08, 0, 0, 0])
-    calculated_consumption = bus.calculate_route_energy_consumption(
-        route
-    )
+    calculated_consumption = bus.compute_route_consumption(route)
     np.testing.assert_allclose(calculated_consumption, expected_consumption, rtol=1e-1)
 
 
@@ -175,8 +175,8 @@ def test_regenerative_braking_calculation(
         pytest.skip("This test is only applicable for electric buses.")
 
     calculated_regenerative_braking = bus._engine.compute_regenerative_braking(  # noqa: SLF001
-        bus.compute_route_hill_climb_resistance(route),
-        bus.compute_linear_acceleration_force(route),
+        bus.compute_route_hill_climb_resistance_forces(route),
+        bus.compute_linear_acceleration_forces(route),
         route,
     )
     np.testing.assert_allclose(
@@ -191,5 +191,5 @@ def test_electric_bus_consumption_calculation(
     route = test_route
     bus = test_electric_bus
     expected_consumption = np.array([6.77629e05, 88111.50959, -3402.75, 100793.0441])
-    calculated_consumption = bus.calculate_route_energy_consumption(route)
+    calculated_consumption = bus.compute_route_consumption(route)
     np.testing.assert_allclose(calculated_consumption, expected_consumption, rtol=1e-1)

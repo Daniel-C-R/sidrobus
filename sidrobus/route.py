@@ -1,7 +1,7 @@
 """Module for representing a bus route as a polyline in 3D space.
 
-The Route class stores geographical coordinates (longitude, latitude) and heights above
-sea level for each point along the route.
+The Route class stores geographical coordinates (longitude, latitude) and altitudes
+above sea level for each point along the route.
 """
 
 import numpy as np
@@ -22,25 +22,25 @@ class Route:
     _times: npt.NDArray[np.float64]
     _longitudes: npt.NDArray[np.float64]
     _latitudes: npt.NDArray[np.float64]
-    _heights: npt.NDArray[np.float64]
-    _velocities: npt.NDArray[np.float64]
+    _altitudes: npt.NDArray[np.float64]
+    _speeds: npt.NDArray[np.float64]
 
     def __init__(
         self,
         times: npt.NDArray[np.float64],
         longitudes: npt.NDArray[np.float64],
         latitudes: npt.NDArray[np.float64],
-        heights: npt.NDArray[np.float64],
-        velocities: npt.NDArray[np.float64],
+        altitudes: npt.NDArray[np.float64],
+        speeds: npt.NDArray[np.float64],
     ) -> None:
-        """Initializes a Route object with geographical coordinates and heights.
+        """Initializes a Route object with geographical coordinates and altitudes.
 
         Args:
             times (npt.NDArray[np.float64]): Array of time values.
             longitudes (npt.NDArray[np.float64]): Array of longitude values.
             latitudes (npt.NDArray[np.float64]): Array of latitude values.
-            heights (npt.NDArray[np.float64]): Array of height values.
-            velocities (npt.NDArray[np.float64]): Array of velocity values.
+            altitudes (npt.NDArray[np.float64]): Array of height values.
+            speeds (npt.NDArray[np.float64]): Array of velocity values.
 
         Returns:
             None
@@ -49,16 +49,16 @@ class Route:
         self._times = times
         self._longitudes = longitudes
         self._latitudes = latitudes
-        self._heights = heights
-        self._velocities = velocities
+        self._altitudes = altitudes
+        self._speeds = speeds
 
     @classmethod
     def from_dataframe(cls, df: pd.DataFrame) -> "Route":
-        """Creates a Route object from a pandas DataFrame.
+        """Create a Route object from a pandas DataFrame.
 
         Args:
             df (pd.DataFrame): DataFrame containing columns 'time', 'longitude',
-                'latitude', 'height', and 'velocity'.
+                'latitude', 'altitude', and 'speed'.
 
         Returns:
             Route: A Route object initialized with the data from the DataFrame.
@@ -67,8 +67,8 @@ class Route:
             times=df["time"].to_numpy(dtype=np.float64),
             longitudes=df["longitude"].to_numpy(dtype=np.float64),
             latitudes=df["latitude"].to_numpy(dtype=np.float64),
-            heights=df["altitude"].to_numpy(dtype=np.float64),
-            velocities=df["speed"].to_numpy(dtype=np.float64),
+            altitudes=df["altitude"].to_numpy(dtype=np.float64),
+            speeds=df["speed"].to_numpy(dtype=np.float64),
         )
 
     @property
@@ -99,22 +99,22 @@ class Route:
         return self._latitudes
 
     @property
-    def heights(self) -> npt.NDArray[np.float64]:
-        """Returns the heights of the route.
+    def altitudes(self) -> npt.NDArray[np.float64]:
+        """Returns the altitudes of the route.
 
         Returns:
             npt.NDArray[np.float64]: Array of height values.
         """
-        return self._heights
+        return self._altitudes
 
     @property
-    def velocities(self) -> npt.NDArray[np.float64]:
-        """Returns the velocities of the route.
+    def speeds(self) -> npt.NDArray[np.float64]:
+        """Returns the speeds of the route.
 
         Returns:
             npt.NDArray[np.float64]: Array of velocity values.
         """
-        return self._velocities
+        return self._speeds
 
     @property
     def distances(self) -> npt.NDArray[np.float64]:
@@ -146,21 +146,21 @@ class Route:
         c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
         horizontal_distances = EARTH_RADIUS * c
 
-        # Calculate differences in heights
-        height_differences = np.diff(self._heights)
+        # Calculate differences in altitudes
+        height_differences = np.diff(self._altitudes)
 
         # Calculate distances using Pythagorean theorem
         return np.sqrt(horizontal_distances**2 + height_differences**2)
 
     @property
-    def avg_velocities(self) -> npt.NDArray[np.float64]:
-        """Calculates the average velocities between consecutive points along the route.
+    def avg_speeds(self) -> npt.NDArray[np.float64]:
+        """Calculates the average speeds between consecutive points along the route.
 
         Returns:
-            npt.NDArray[np.float64]: Array of average velocities between consecutive
+            npt.NDArray[np.float64]: Array of average speeds between consecutive
                 points.
         """
-        return (self._velocities[:-1] + self._velocities[1:]) / 2
+        return (self._speeds[:-1] + self._speeds[1:]) / 2
 
     @property
     def accelerations(self) -> npt.NDArray[np.float64]:
@@ -169,5 +169,5 @@ class Route:
         Returns:
             npt.NDArray[np.float64]: Array of accelerations between consecutive points.
         """
-        accelerations = np.diff(self._velocities) / np.diff(self._times)
+        accelerations = np.diff(self._speeds) / np.diff(self._times)
         return np.clip(accelerations, -2, 2)
