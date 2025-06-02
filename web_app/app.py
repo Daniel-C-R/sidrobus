@@ -9,7 +9,8 @@ from sidrobus.bus.engine import ElectricEngine, FuelEngine
 from sidrobus.constants import DIESEL_LHV
 from sidrobus.route import Route
 from sidrobus.unit_conversions import joules_to_kwh, kwh_to_joules
-from web_app.map_plotting import plot_route_map
+from web_app.interactive_plotting import plot_route_data
+from web_app.map_plotting import plot_route_map, plot_simulation_results_map
 
 
 def snake_to_title(snake_str: str) -> str:
@@ -79,11 +80,33 @@ if route_file is not None:
     with st.expander("Route Data"):
         st.dataframe(route_data)
 
+    st.subheader("Plots")
+
     route_map = plot_route_map(route)
     folium_static(
         route_map,
         width=700,
         height=500,
+    )
+
+    route_plot = plot_route_data(route)
+    st.plotly_chart(
+        route_plot,
+        use_container_width=True,
+        responsive=True,
+        config={
+            "displayModeBar": True,
+            "modeBarButtonsToRemove": [
+                "sendDataToCloud",
+                "editInChartStudio",
+                "zoom2d",
+                "select2d",
+                "pan2d",
+                "lasso2d",
+                "autoScale2d",
+                "resetScale2d",
+            ],
+        },
     )
 
     route_summary = route.summary
@@ -201,3 +224,12 @@ if route_file is not None:
 
         st.subheader("Simulation results per segment")
         st.dataframe(results_per_segment)
+
+        st.subheader("Simulation results map")
+
+        results_map = plot_simulation_results_map(route, results_per_segment)
+        folium_static(
+            results_map,
+            width=700,
+            height=500,
+        )
