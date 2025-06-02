@@ -156,9 +156,10 @@ class AbstractEngine(ABC):
             NDArray[np.float64]: An array of fuel consumption values corresponding
                 to each segment of the route.
         """
-        return (hill_climb_resistances * route.distances / self._efficiency).astype(
-            np.float64
-        )
+        mask = hill_climb_resistances > 0
+        return (
+            hill_climb_resistances * mask * route.distances / self._efficiency
+        ).astype(np.float64)
 
     def compute_route_linear_acceleration_consumption(
         self,
@@ -177,9 +178,10 @@ class AbstractEngine(ABC):
             NDArray[np.float64]: An array of fuel consumption values corresponding
                 to each segment of the route.
         """
-        return (linear_acceleration_forces * route.distances / self._efficiency).astype(
-            np.float64
-        )
+        mask = linear_acceleration_forces > 0
+        return (
+            linear_acceleration_forces * mask * route.distances / self._efficiency
+        ).astype(np.float64)
 
     def compute_route_consumption(
         self,
