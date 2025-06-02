@@ -1,6 +1,5 @@
 """Web UI for the simulator."""
 
-import numpy as np
 import pandas as pd
 import streamlit as st
 from streamlit_folium import folium_static
@@ -131,106 +130,74 @@ if route_file is not None:
             rolling_resistance_coef=rolling_resistance_coef,
         )
 
-        # --- Force and consumption calculations ---
-        rolling_resistance = bus.compute_route_rolling_resistance_forces()
-        aerodynamic_drag = bus.compute_route_aerodynamic_drag_forces(route)
-        hill_climb = bus.compute_route_hill_climb_resistance_forces(route)
-        linear_acc = bus.compute_linear_acceleration_forces(route)
-
-        rolling_resistance_energy = bus.compute_route_rolling_resistance_consumption(
-            route
-        )
-        aerodynamic_drag_energy = bus.compute_route_aerodynamic_drag_consumption(route)
-        hill_climb_energy = bus.compute_route_hill_climb_consumption(route)
-        linear_acc_energy = bus.compute_linear_acceleration_consumption(route)
-
-        regeneration = bus.compute_route_regeneration(route)
-        total_consumption = bus.compute_route_consumption(route)
-        net_consumption = bus.compute_route_final_consumption(route)
-
-        # --- Show results ---
         st.header("Simulation Results")
 
-        if engine_type == "Electric":
-            st.write("Energy Consumption (kWh):", joules_to_kwh(net_consumption.sum()))
-            st.write("---")
-            st.write("**Detailed Energy Breakdown (kWh):**")
-            st.write(
-                "Rolling Resistance:", joules_to_kwh(rolling_resistance_energy.sum())
-            )
-            st.write("Aerodynamic Drag:", joules_to_kwh(aerodynamic_drag_energy.sum()))
-            st.write("Hill Climb:", joules_to_kwh(hill_climb_energy.sum()))
-            st.write("Linear Acceleration:", joules_to_kwh(linear_acc_energy.sum()))
-            st.write("Regeneration:", joules_to_kwh(regeneration.sum()))
-            st.write(
-                "Total Consumption (no regen):", joules_to_kwh(total_consumption.sum())
-            )
-            st.write(
-                "Net Consumption (with regen):", joules_to_kwh(net_consumption.sum())
-            )
-        else:
-            st.write(
-                "Energy Consumption (liters):", total_consumption.sum() / DIESEL_LHV
-            )
-            st.write("---")
-            st.write("**Detailed Energy Breakdown (liters):**")
-            st.write(
-                "Rolling Resistance:", rolling_resistance_energy.sum() / DIESEL_LHV
-            )
-            st.write("Aerodynamic Drag:", aerodynamic_drag_energy.sum() / DIESEL_LHV)
-            st.write("Hill Climb:", hill_climb_energy.sum() / DIESEL_LHV)
-            st.write("Linear Acceleration:", linear_acc_energy.sum() / DIESEL_LHV)
-            st.write("Regeneration (not available):", 0.0)
-            st.write(
-                "Total Consumption (no regen):", total_consumption.sum() / DIESEL_LHV
-            )
-            st.write(
-                "Net Consumption (with regen):", net_consumption.sum() / DIESEL_LHV
-            )
+        simulation_results = bus.simulate_trip(route, modify_bus=False)
+        results_per_segment = pd.DataFrame(simulation_results["results_per_segment"])
 
-        # --- DataFrame with per-segment results ---
+        st.subheader("Simulation summary")
 
-        # Ensure regeneration is zeros for Diesel (length matches route.distances)
-        if engine_type == "Diesel":
-            regeneration = np.zeros_like(route.distances)
+        st.write("Simulation type: ", simulation_results["simulation_type"])
+        st.write(
+            "Total Rolling Resistance Force (N): ",
+            f"{simulation_results['total_rolling_resistance_force']:.2f}",
+        )
+        st.write(
+            "Total Aerodynamic Drag Force (N): ",
+            f"{simulation_results['total_aerodynamic_drag_force']:.2f}",
+        )
+        st.write(
+            "Total Hill Climb Resistance Force (N): ",
+            f"{simulation_results['total_hill_climb_resistance_force']:.2f}",
+        )
+        st.write(
+            "Total Linear Acceleration Force (N): ",
+            f"{simulation_results['total_linear_acceleration_force']:.2f}",
+        )
+        st.write(
+            "Total Tractive Force (N): ",
+            f"{simulation_results['total_tractive_force']:.2f}",
+        )
+        st.write(
+            "Total Rolling Resistance Consumption (kWh): ",
+            f"{joules_to_kwh(simulation_results['total_rolling_resistance_consumption']):.2f}",
+        )
+        st.write(
+            "Total Aerodynamic Drag Consumption (kWh): ",
+            f"{joules_to_kwh(simulation_results['total_aerodynamic_drag_consumption']):.2f}",
+        )
+        st.write(
+            "Total Hill Climb Consumption (kWh): ",
+            f"{joules_to_kwh(simulation_results['total_hill_climb_consumption']):.2f}",
+        )
+        st.write(
+            "Total Linear Acceleration Consumption (kWh): ",
+            f"{joules_to_kwh(simulation_results['total_linear_acceleration_consumption']):.2f}",
+        )
+        st.write(
+            "Total Consumption (kWh): ",
+            f"{joules_to_kwh(simulation_results['total_consumption']):.2f}",
+        )
+        st.write(
+            "Total Regeneration (kWh): ",
+            f"{joules_to_kwh(simulation_results['total_regeneration']):.2f}",
+        )
+        st.write(
+            "Total Net Consumption (kWh): ",
+            f"{joules_to_kwh(simulation_results['total_net_consumption']):.2f}",
+        )
+        st.write(
+            "Percentage Consumption (%): ",
+            f"{simulation_results['percentage_consumption']:.2f}",
+        )
+        st.write(
+            "Net Consumption per km (kWh/km): ",
+            f"{joules_to_kwh(simulation_results['net_consumption_per_km']):.2f}",
+        )
+        st.write(
+            "Net Consumption per 100km (kWh/100km): ",
+            f"{joules_to_kwh(simulation_results['net_consumption_per_100km']):.2f}",
+        )
 
-        # Ensure rolling_resistance has the correct length for the number of route
-        # segments
-        if np.array(rolling_resistance).size == 1:
-            rolling_resistance = np.full_like(
-                route.distances, rolling_resistance.item(), dtype=np.float64
-            )
-
-        # Ensure all columns have the same length
-        results_dict = {
-            "distance_m": route.distances,
-            "avg_speed_m_s": route.avg_speeds,
-            "acceleration_m_s2": route.accelerations,
-            "rolling_resistance_N": rolling_resistance,
-            "aero_drag_N": aerodynamic_drag,
-            "hill_climb_N": hill_climb,
-            "linear_acc_N": linear_acc,
-            "rolling_resistance_energy": rolling_resistance_energy,
-            "aero_drag_energy": aerodynamic_drag_energy,
-            "hill_climb_energy": hill_climb_energy,
-            "linear_acc_energy": linear_acc_energy,
-            "regeneration": regeneration,
-            "total_consumption": total_consumption,
-            "net_consumption": net_consumption,
-        }
-
-        # Normalize lengths of all arrays to match the number of route segments
-        n = len(route.distances)
-        for k, v in results_dict.items():
-            arr = np.array(v)
-            if arr.shape[0] > n:
-                results_dict[k] = arr[:n]
-            elif arr.shape[0] < n:
-                results_dict[k] = np.pad(
-                    arr, (0, n - arr.shape[0]), constant_values=np.nan
-                )
-            # else: already correct
-
-        df_results = pd.DataFrame(results_dict)
-        st.write("**Per-segment Results:**")
-        st.dataframe(df_results)
+        st.subheader("Simulation results per segment")
+        st.dataframe(results_per_segment)

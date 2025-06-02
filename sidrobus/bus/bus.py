@@ -55,6 +55,11 @@ class Bus:
         self._model_manufacturer = model_manufacturer
 
     @property
+    def engine_type(self) -> str:
+        """Returns the type of the bus's engine."""
+        return self._engine.engine_type
+
+    @property
     def mass(self) -> float:
         """Returns the mass of the bus."""
         return self._mass
@@ -276,3 +281,127 @@ class Bus:
             self.compute_linear_acceleration_forces(route),
             modify_engine=modify_bus,
         )
+
+    def simulate_trip(self, route: Route, modify_bus: bool = False) -> dict:
+        """Simulate a trip for the bus over a given route.
+
+        This method calculates various forces and energy consumptions for the bus
+        during a trip along the specified route. It returns a dictionary containing
+        the results of the simulation, including total forces, consumptions, and
+        regeneration values.
+
+        The results include:
+            - Total rolling resistance force
+            - Total aerodynamic drag force
+            - Total hill climb resistance force
+            - Total linear acceleration force
+            - Total tractive force
+            - Total rolling resistance consumption
+            - Total aerodynamic drag consumption
+            - Total hill climb consumption
+            - Total linear acceleration consumption
+            - Total energy consumption
+            - Total regeneration
+            - Total net consumption
+            - Percentage of energy consumed relative to the bus's energy capacity
+            - Net consumption per kilometer and per 100 kilometers
+
+        Args:
+            route (Route): The route for which the trip is to be simulated.
+            modify_bus (bool, optional): If True, modifies the bus's energy state
+                after the simulation. Defaults to False.
+
+        Returns:
+            dict: A dictionary containing the results of the simulation, including
+                total forces, consumptions, and regeneration values.
+        """
+        simulation_type = self.engine_type
+
+        rolling_resistances = self.compute_route_rolling_resistance_forces()
+        aerodynamic_drag_resistances = self.compute_route_aerodynamic_drag_forces(route)
+        hill_climb_resistances = self.compute_route_hill_climb_resistance_forces(route)
+        linear_acceleration_forces = self.compute_linear_acceleration_forces(route)
+        tractive_forces = self.compute_route_tractive_forces(route)
+
+        total_rolling_resistance_force = rolling_resistances.sum()
+        total_aerodynamic_drag_force = aerodynamic_drag_resistances.sum()
+        total_hill_climb_resistance_force = hill_climb_resistances.sum()
+        total_linear_acceleration_force = linear_acceleration_forces.sum()
+        total_tractive_force = tractive_forces.sum()
+
+        rolling_resistance_consumptions = (
+            self.compute_route_rolling_resistance_consumption(route)
+        )
+        aerodynamic_drag_consumptions = self.compute_route_aerodynamic_drag_consumption(
+            route
+        )
+        hill_climb_consumptions = self.compute_route_hill_climb_consumption(route)
+        linear_acceleration_consumptions = self.compute_linear_acceleration_consumption(
+            route
+        )
+        consumptions = self.compute_route_consumption(route)
+        regeneration = self.compute_route_regeneration(route)
+        net_consumptions = self.compute_route_final_consumption(route, modify_bus)
+
+        total_rolling_resistance_consumption: float = (
+            rolling_resistance_consumptions.sum()
+        )
+        total_aerodynamic_drag_consumption: float = aerodynamic_drag_consumptions.sum()
+        total_hill_climb_consumption: float = hill_climb_consumptions.sum()
+        total_linear_acceleration_consumption: float = (
+            linear_acceleration_consumptions.sum()
+        )
+        total_consumption: float = consumptions.sum()
+        total_regeneration: float = regeneration.sum()
+        total_net_consumption: float = net_consumptions.sum()
+
+        net_consumption_per_km: float = total_net_consumption / route.distances.sum()
+        net_consumption_per_100km: float = net_consumption_per_km * 100
+
+        percentage_consumption = (
+            total_consumption / self.energy_capacity * 100
+            if self.energy_capacity > 0
+            else 0.0
+        )
+
+        if modify_bus:
+            self._engine.energy -= total_net_consumption
+
+        return {
+            "simulation_type": simulation_type,
+            "total_rolling_resistance_force": total_rolling_resistance_force,
+            "total_aerodynamic_drag_force": total_aerodynamic_drag_force,
+            "total_hill_climb_resistance_force": total_hill_climb_resistance_force,
+            "total_linear_acceleration_force": total_linear_acceleration_force,
+            "total_tractive_force": total_tractive_force,
+            "total_rolling_resistance_consumption": (
+                total_rolling_resistance_consumption
+            ),
+            "total_aerodynamic_drag_consumption": total_aerodynamic_drag_consumption,
+            "total_hill_climb_consumption": total_hill_climb_consumption,
+            "total_linear_acceleration_consumption": (
+                total_linear_acceleration_consumption
+            ),
+            "total_consumption": total_consumption,
+            "total_regeneration": total_regeneration,
+            "total_net_consumption": total_net_consumption,
+            "percentage_consumption": percentage_consumption,
+            "net_consumption_per_km": net_consumption_per_km,
+            "net_consumption_per_100km": net_consumption_per_100km,
+            "results_per_segment": {
+                "rolling_resistance": np.repeat(
+                    total_rolling_resistance_force, len(net_consumptions)
+                ),
+                "aerodynamic_drag_resistance": aerodynamic_drag_resistances,
+                "hill_climb_resistance": hill_climb_resistances,
+                "linear_acceleration_force": linear_acceleration_forces,
+                "tractive_force": tractive_forces,
+                "rolling_resistance_consumption": rolling_resistance_consumptions,
+                "aerodynamic_drag_consumption": aerodynamic_drag_consumptions,
+                "hill_climb_consumption": hill_climb_consumptions,
+                "linear_acceleration_consumption": linear_acceleration_consumptions,
+                "consumption": consumptions,
+                "regeneration": regeneration,
+                "net_consumption": net_consumptions,
+            },
+        }
