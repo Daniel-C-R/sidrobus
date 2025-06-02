@@ -3,7 +3,7 @@
 import numpy as np
 import pandas as pd
 import streamlit as st
-from streamlit_folium import st_folium
+from streamlit_folium import folium_static
 
 from sidrobus.bus import Bus
 from sidrobus.bus.engine import ElectricEngine, FuelEngine
@@ -11,6 +11,12 @@ from sidrobus.constants import DIESEL_LHV
 from sidrobus.route import Route
 from sidrobus.unit_conversions import joules_to_kwh, kwh_to_joules
 from web_app.map_plotting import plot_route_map
+
+
+def snake_to_title(snake_str: str) -> str:
+    """Convert snake_case string to Title Case."""
+    return snake_str.replace("_", " ").title()
+
 
 st.title("Bus Simulator")
 
@@ -75,13 +81,30 @@ if route_file is not None:
         st.dataframe(route_data)
 
     route_map = plot_route_map(route)
-    st_folium(
+    folium_static(
         route_map,
-        key="map",
-        returned_objects=[],
         width=700,
         height=500,
     )
+
+    route_summary = route.summary
+
+    st.subheader("Route Summary")
+
+    st.write("Total distance (m): ", f"{route_summary['total_distance']:.2f}")
+    st.write("Number of points: ", route_summary["number_of_points"])
+    st.write("Start time: ", route_summary["start_time"])
+    st.write("End time: ", route_summary["end_time"])
+    st.write("Duration (s): ", f"{route_summary['duration']:.2f}")
+    st.write("Min altitude (m): ", f"{route_summary['min_altitude']:.2f}")
+    st.write("Max altitude (m): ", f"{route_summary['max_altitude']:.2f}")
+    st.write("Avg altitude (m): ", f"{route_summary['avg_altitude']:.2f}")
+    st.write("Min speed (m/s): ", f"{route_summary['min_speed']:.2f}")
+    st.write("Max speed (m/s): ", f"{route_summary['max_speed']:.2f}")
+    st.write("Avg speed (m/s): ", f"{route_summary['avg_speed']:.2f}")
+    st.write("Min acceleration (m/s²): ", f"{route_summary['min_acceleration']:.2f}")
+    st.write("Max acceleration (m/s²): ", f"{route_summary['max_acceleration']:.2f}")
+    st.write("Avg acceleration (m/s²): ", f"{route_summary['avg_acceleration']:.2f}")
 
     if run:
         # --- Prepare bus and engine ---

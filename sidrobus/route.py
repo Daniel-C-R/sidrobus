@@ -72,6 +72,46 @@ class Route:
         )
 
     @property
+    def summary(self) -> dict:
+        """Returns a summary of route statistics as a dictionary.
+
+        The summary includes:
+            - total_distance (float): The total distance covered.
+            - number_of_points (int): The number of recorded points.
+            - start_time: The timestamp of the first point.
+            - end_time: The timestamp of the last point.
+            - duration: The time difference between the last and first points.
+            - min_altitude (float): The minimum altitude recorded.
+            - max_altitude (float): The maximum altitude recorded.
+            - avg_altitude (float): The average altitude.
+            - min_speed (float): The minimum speed recorded.
+            - max_speed (float): The maximum speed recorded.
+            - avg_speed (float): The average speed.
+            - min_acceleration (float): The minimum acceleration recorded.
+            - max_acceleration (float): The maximum acceleration recorded.
+            - avg_acceleration (float): The average acceleration.
+
+        Returns:
+            dict: A dictionary containing the computed route statistics.
+        """
+        return {
+            "total_distance": self.distances.sum(),
+            "number_of_points": len(self._times),
+            "start_time": self._times[0],
+            "end_time": self._times[-1],
+            "duration": self._times[-1] - self._times[0],
+            "min_altitude": self._altitudes.min(),
+            "max_altitude": self._altitudes.max(),
+            "avg_altitude": self._altitudes.mean(),
+            "min_speed": self._speeds.min(),
+            "max_speed": self._speeds.max(),
+            "avg_speed": self._speeds.mean(),
+            "min_acceleration": self.accelerations.min(),
+            "max_acceleration": self.accelerations.max(),
+            "avg_acceleration": self.accelerations.mean(),
+        }
+
+    @property
     def times(self) -> npt.NDArray[np.float64]:
         """Returns the times of the route.
 
