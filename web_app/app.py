@@ -9,7 +9,7 @@ from sidrobus.bus.engine import ElectricEngine, FuelEngine
 from sidrobus.constants import DIESEL_LHV
 from sidrobus.route import Route
 from sidrobus.unit_conversions import joules_to_kwh, kwh_to_joules
-from web_app.interactive_plotting import plot_route_data
+from web_app.interactive_plotting import plot_route_data, plot_simulation_results
 from web_app.map_plotting import plot_route_map, plot_simulation_results_map
 
 
@@ -218,4 +218,12 @@ if route_file is not None:
             results_map,
             width=700,
             height=500,
+        )
+
+        st.altair_chart(
+            plot_simulation_results(
+                times=route.times,
+                results=results_per_segment,
+            ),
+            use_container_width=True,
         )

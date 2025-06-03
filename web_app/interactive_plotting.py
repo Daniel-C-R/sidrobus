@@ -1,7 +1,9 @@
 """Module for interactive plots."""
 
 import altair as alt
+import numpy as np
 import pandas as pd
+from numpy import typing as npt
 
 from sidrobus.route import Route
 
@@ -165,4 +167,81 @@ def plot_route_data(route: Route) -> alt.VConcatChart:
     return alt.vconcat(main_chart, time_selector).configure_axis(
         labelPadding=10,  # Add padding between axis and labels
         titlePadding=10,  # Add padding between axis and title
+    )
+
+
+def plot_simulation_results(
+    times: npt.NDArray[np.float64], results: pd.DataFrame
+) -> alt.Chart:
+    """Creates an interactive Altair chart to visualize simulation results over time.
+
+    The graph displays time on the x-axis and allows the user to switch between
+    different simulation metrics on the y-axis using a selection.
+    Hovering over points shows all relevant data properties.
+
+    Args:
+        times (npt.NDArray[np.float64]): Array of time points
+        results (pd.DataFrame): DataFrame containing simulation results per segment
+
+    Returns:
+        alt.Chart: An Altair chart with interactive selection capabilities
+    """
+    # Skip the first time point to match segment results (N-1 elements)
+    segment_times = times[1:]
+
+    # Prepare data for plotting
+    data = pd.DataFrame()
+
+    # Add all the columns from results with time as a common axis
+    for column in results.columns:
+        if len(results[column]) == len(segment_times):
+            data_slice = pd.DataFrame(
+                {"time": segment_times, "value": results[column], "metric": column}
+            )
+            data = pd.concat([data, data_slice], ignore_index=True)
+
+    # Create a selection for choosing the metric to display
+    # Set default to "net_consumption" if it exists, otherwise use the first metric
+    default_metric = (
+        "net_consumption"
+        if "net_consumption" in results.columns
+        else data["metric"].unique()[0]
+    )
+
+    metric_selection = alt.param(
+        name="metric_select",
+        value=default_metric,  # Default to net_consumption or first metric
+        bind=alt.binding_select(
+            options=sorted(data["metric"].unique().tolist()), name="Select Metric: "
+        ),
+    )
+
+    # Create the base chart
+    base_chart = (
+        alt.Chart(data)
+        .encode(
+            x=alt.X("time:Q", title="Time (s)"),
+        )
+        .properties(width=700, height=400, title="Simulation Results Over Time")
+    )
+
+    # Create the main visualization with metric selection
+    chart = (
+        base_chart.mark_line(point=True)
+        .encode(
+            y=alt.Y("value:Q", title="Value"),
+            color=alt.Color("metric:N", legend=None),
+            tooltip=[
+                alt.Tooltip("time:Q", title="Time (s)", format=".2f"),
+                alt.Tooltip("value:Q", title="Value", format=".2f"),
+                alt.Tooltip("metric:N", title="Metric"),
+            ],
+        )
+        .transform_filter(alt.datum.metric == metric_selection)
+        .add_params(metric_selection)
+    )
+
+    return chart.configure_axis(
+        labelPadding=10,
+        titlePadding=10,
     )
