@@ -1,134 +1,168 @@
 """Module for interactive plots."""
 
-import plotly.graph_objects as go
+import altair as alt
+import pandas as pd
 
 from sidrobus.route import Route
 
 
-def plot_route_data(route: Route) -> go.Figure:
-    """Creates an interactive Plotly graph to visualize route data over time.
+def plot_route_data(route: Route) -> alt.VConcatChart:
+    """Creates an interactive Altair chart to visualize route data over time.
 
     The graph displays time on the x-axis and allows the user to switch between
-    altitude, speed, or acceleration on the y-axis using a dropdown menu.
+    altitude, speed, or acceleration on the y-axis using a selection.
     Hovering over points shows all relevant data properties.
+    A time selector allows viewing specific time intervals.
 
     Args:
         route (Route): A Route object containing the data to visualize
 
     Returns:
-        go.Figure: A Plotly figure object with the interactive visualization
+        alt.VConcatChart: An Altair chart with time selection capabilities
     """
-    # Create figure
-    fig = go.Figure()
+    # Prepare data
+    # Create a main DataFrame with altitude and speed data
+    main_data = pd.DataFrame(
+        {
+            "time": route.times,
+            "altitude": route.altitudes,
+            "speed": route.speeds,
+            "measure": ["Altitude" for _ in route.times],  # Default measure
+        }
+    )
 
-    # Add traces for each metric
-    # Altitude trace
-    fig.add_trace(
-        go.Scatter(
-            x=route.times,
-            y=route.altitudes,
-            mode="lines+markers",
-            name="Altitude",
-            hovertemplate="<b>Time</b>: %{x:.2f}s<br>"
-            + "<b>Altitude</b>: %{y:.2f}m<br>"
-            + "<b>Speed</b>: %{customdata[0]:.2f}m/s<br>"
-            + "<b>Acceleration</b>: %{customdata[1]:.2f}m/s²<br>"
-            + "<extra></extra>",
-            visible=True,
-            customdata=[
-                [speed, 0] for speed in route.speeds
-            ],  # Placeholder for acceleration at endpoints
+    # Create a separate DataFrame for acceleration data (which is one element shorter)
+    accel_data = pd.DataFrame(
+        {
+            "time": route.times[:-1],
+            "acceleration": route.accelerations,
+            "altitude": route.altitudes[:-1],  # Add altitude for tooltip
+            "speed": route.speeds[:-1],  # Add speed for tooltip
+            "measure": ["Acceleration" for _ in route.times[:-1]],
+        }
+    )
+
+    # Create a selection for choosing the measure to display
+    measure_selection = alt.param(
+        name="measure_select",
+        value="Altitude",  # Default selection
+        bind=alt.binding_select(
+            options=["Altitude", "Speed", "Acceleration"], name="Select Measure: "
+        ),
+    )
+
+    # Create a brush selection for the time interval
+    time_brush = alt.selection_interval(
+        encodings=["x"],
+    )
+
+    # Create conditional time selectors for each measure
+    altitude_selector = (
+        alt.Chart(main_data)
+        .mark_area(color="blue", opacity=0.3)
+        .encode(
+            x=alt.X("time:Q", title="Time (s)"),
+            y=alt.Y("altitude:Q", title="", axis=None),
+        )
+        .add_params(time_brush)
+        .transform_filter(measure_selection == "Altitude")
+    )
+
+    speed_selector = (
+        alt.Chart(main_data)
+        .mark_area(color="green", opacity=0.3)
+        .encode(
+            x=alt.X("time:Q", title="Time (s)"), y=alt.Y("speed:Q", title="", axis=None)
+        )
+        .add_params(time_brush)
+        .transform_filter(measure_selection == "Speed")
+    )
+
+    acceleration_selector = (
+        alt.Chart(accel_data)
+        .mark_area(color="red", opacity=0.3)
+        .encode(
+            x=alt.X("time:Q", title="Time (s)"),
+            y=alt.Y("acceleration:Q", title="", axis=None),
+        )
+        .add_params(time_brush)
+        .transform_filter(measure_selection == "Acceleration")
+    )
+
+    # Combine selectors into a single layer
+    time_selector = alt.layer(
+        altitude_selector, speed_selector, acceleration_selector
+    ).properties(width=700, height=60, title="Time Selector")
+
+    # Create a chart for altitude and speed data (they share the same time points)
+    base_chart = (
+        alt.Chart(main_data)
+        .encode(
+            x=alt.X(
+                "time:Q",
+                title="Time (s)",
+                scale=alt.Scale(
+                    domain=time_brush
+                ),  # Use the brush selection to filter time domain
+            )
+        )
+        .properties(
+            width=700,
+            height=400,
+            title="Route Data Visualization",
         )
     )
 
-    # Speed trace
-    fig.add_trace(
-        go.Scatter(
-            x=route.times,
-            y=route.speeds,
-            mode="lines+markers",
-            name="Speed",
-            hovertemplate="<b>Time</b>: %{x:.2f}s<br>"
-            + "<b>Speed</b>: %{y:.2f}m/s<br>"
-            + "<b>Altitude</b>: %{customdata[0]:.2f}m<br>"
-            + "<b>Acceleration</b>: %{customdata[1]:.2f}m/s²<br>"
-            + "<extra></extra>",
-            visible=False,
-            customdata=[
-                [alt, 0] for alt in route.altitudes
-            ],  # Placeholder for acceleration at endpoints
+    # Create the conditional visualization with three possible views
+    main_chart = alt.layer(
+        # Altitude visualization
+        base_chart.mark_line(color="blue", point=alt.OverlayMarkDef(color="blue"))
+        .encode(
+            y=alt.Y("altitude:Q", title="Altitude (m)", scale=alt.Scale(zero=False)),
+            tooltip=[
+                alt.Tooltip("time:Q", title="Time (s)", format=".2f"),
+                alt.Tooltip("altitude:Q", title="Altitude (m)", format=".2f"),
+                alt.Tooltip("speed:Q", title="Speed (m/s)", format=".2f"),
+            ],
         )
-    )
-
-    # Acceleration trace - accelerations array is one element shorter than the others
-    accel_times = route.times[:-1]  # Using time points except the last one
-    accel_values = route.accelerations
-    # For acceleration trace, we need matching altitude and speed data
-    altitude_accel = route.altitudes[:-1]
-    speed_accel = route.speeds[:-1]
-
-    fig.add_trace(
-        go.Scatter(
-            x=accel_times,
-            y=accel_values,
-            mode="lines+markers",
-            name="Acceleration",
-            hovertemplate="<b>Time</b>: %{x:.2f}s<br>"
-            + "<b>Acceleration</b>: %{y:.2f}m/s²<br>"
-            + "<b>Altitude</b>: %{customdata[0]:.2f}m<br>"
-            + "<b>Speed</b>: %{customdata[1]:.2f}m/s<br>"
-            + "<extra></extra>",
-            visible=False,
-            customdata=list(zip(altitude_accel, speed_accel, strict=False)),
+        .transform_filter(measure_selection == "Altitude"),
+        # Speed visualization
+        base_chart.mark_line(color="green", point=alt.OverlayMarkDef(color="green"))
+        .encode(
+            y=alt.Y("speed:Q", title="Speed (m/s)"),
+            tooltip=[
+                alt.Tooltip("time:Q", title="Time (s)", format=".2f"),
+                alt.Tooltip("speed:Q", title="Speed (m/s)", format=".2f"),
+                alt.Tooltip("altitude:Q", title="Altitude (m)", format=".2f"),
+            ],
         )
+        .transform_filter(measure_selection == "Speed"),
+        # Acceleration visualization (on a different dataset)
+        alt.Chart(accel_data)
+        .encode(
+            x=alt.X(
+                "time:Q",
+                title="Time (s)",
+                scale=alt.Scale(domain=time_brush),  # Use the brush selection here too
+            )
+        )
+        .mark_line(color="red", point=alt.OverlayMarkDef(color="red"))
+        .encode(
+            y=alt.Y("acceleration:Q", title="Acceleration (m/s²)"),
+            tooltip=[
+                alt.Tooltip("time:Q", title="Time (s)", format=".2f"),
+                alt.Tooltip(
+                    "acceleration:Q", title="Acceleration (m/s²)", format=".2f"
+                ),
+                alt.Tooltip("altitude:Q", title="Altitude (m)", format=".2f"),
+                alt.Tooltip("speed:Q", title="Speed (m/s)", format=".2f"),
+            ],
+        )
+        .transform_filter(measure_selection == "Acceleration"),
+    ).add_params(measure_selection)
+
+    # Vertically concatenate the time selector and the main chart
+    return alt.vconcat(main_chart, time_selector).configure_axis(
+        labelPadding=10,  # Add padding between axis and labels
+        titlePadding=10,  # Add padding between axis and title
     )
-
-    # Create dropdown menu for selecting which data to display
-    dropdown_buttons = [
-        {
-            "label": "Altitude",
-            "method": "update",
-            "args": [
-                {"visible": [True, False, False]},
-                {"title": "Altitude over Time", "yaxis": {"title": "Altitude (m)"}},
-            ],
-        },
-        {
-            "label": "Speed",
-            "method": "update",
-            "args": [
-                {"visible": [False, True, False]},
-                {"title": "Speed over Time", "yaxis": {"title": "Speed (m/s)"}},
-            ],
-        },
-        {
-            "label": "Acceleration",
-            "method": "update",
-            "args": [
-                {"visible": [False, False, True]},
-                {
-                    "title": "Acceleration over Time",
-                    "yaxis": {"title": "Acceleration (m/s²)"},
-                },
-            ],
-        },
-    ]
-
-    # Update layout with dropdown menu and initial settings
-    fig.update_layout(
-        title="Altitude over Time",
-        xaxis_title="Time (s)",
-        yaxis_title="Altitude (m)",
-        hovermode="closest",
-        updatemenus=[
-            {
-                "buttons": dropdown_buttons,
-                "direction": "down",
-                "showactive": True,
-                "x": 0.1,
-                "y": 1.15,
-            }
-        ],
-    )
-
-    return fig

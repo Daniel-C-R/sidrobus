@@ -90,23 +90,9 @@ if route_file is not None:
     )
 
     route_plot = plot_route_data(route)
-    st.plotly_chart(
+    st.altair_chart(
         route_plot,
         use_container_width=True,
-        responsive=True,
-        config={
-            "displayModeBar": True,
-            "modeBarButtonsToRemove": [
-                "sendDataToCloud",
-                "editInChartStudio",
-                "zoom2d",
-                "select2d",
-                "pan2d",
-                "lasso2d",
-                "autoScale2d",
-                "resetScale2d",
-            ],
-        },
     )
 
     route_summary = route.summary

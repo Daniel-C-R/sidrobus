@@ -12,8 +12,7 @@ dependencies = [
     "streamlit (>=1.45.1,<2.0.0)",
     "folium (>=0.19.6,<0.20.0)",
     "streamlit-folium (>=0.25.0,<0.26.0)",
-    "matplotlib (>=3.10.3,<4.0.0)",
-    "plotly (>=6.1.2,<7.0.0)",
+    "altair[all] (>=5.5.0,<6.0.0)",
 ]
 
 
