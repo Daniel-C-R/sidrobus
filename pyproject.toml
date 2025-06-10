@@ -59,3 +59,7 @@ convention = "google"
 
 [tool.ruff.lint.flake8-pytest-style]
 fixture-parentheses = false
+
+[tool.poetry.scripts]
+kml-to-csv = "scripts.kml_to_csv:main"
+preprocess-matlab-csv = "scripts.preprocess_matlab_csv:main"
