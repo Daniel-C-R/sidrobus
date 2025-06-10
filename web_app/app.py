@@ -99,20 +99,51 @@ if route_file is not None:
 
     st.subheader("Route Summary")
 
-    st.write("Total distance (m): ", f"{route_summary['total_distance']:.2f}")
-    st.write("Number of points: ", route_summary["number_of_points"])
-    st.write("Start time: ", route_summary["start_time"])
-    st.write("End time: ", route_summary["end_time"])
-    st.write("Duration (s): ", f"{route_summary['duration']:.2f}")
-    st.write("Min altitude (m): ", f"{route_summary['min_altitude']:.2f}")
-    st.write("Max altitude (m): ", f"{route_summary['max_altitude']:.2f}")
-    st.write("Avg altitude (m): ", f"{route_summary['avg_altitude']:.2f}")
-    st.write("Min speed (m/s): ", f"{route_summary['min_speed']:.2f}")
-    st.write("Max speed (m/s): ", f"{route_summary['max_speed']:.2f}")
-    st.write("Avg speed (m/s): ", f"{route_summary['avg_speed']:.2f}")
-    st.write("Min acceleration (m/s²): ", f"{route_summary['min_acceleration']:.2f}")
-    st.write("Max acceleration (m/s²): ", f"{route_summary['max_acceleration']:.2f}")
-    st.write("Avg acceleration (m/s²): ", f"{route_summary['avg_acceleration']:.2f}")
+    # Row 1: Basic route info
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total Distance (m)", f"{route_summary['total_distance']:.2f}")
+    with col2:
+        st.metric("Number of Points", route_summary["number_of_points"])
+    with col3:
+        st.metric("Duration (s)", f"{route_summary['duration']:.2f}")
+
+    # Row 2: Time info
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Start Time", route_summary["start_time"])
+    with col2:
+        st.metric("End Time", route_summary["end_time"])
+    with col3:
+        # Empty placeholder or we could add another relevant metric
+        st.empty()
+
+    # Row 3: Altitude metrics
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Min Altitude (m)", f"{route_summary['min_altitude']:.2f}")
+    with col2:
+        st.metric("Max Altitude (m)", f"{route_summary['max_altitude']:.2f}")
+    with col3:
+        st.metric("Avg Altitude (m)", f"{route_summary['avg_altitude']:.2f}")
+
+    # Row 4: Speed metrics
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Min Speed (m/s)", f"{route_summary['min_speed']:.2f}")
+    with col2:
+        st.metric("Max Speed (m/s)", f"{route_summary['max_speed']:.2f}")
+    with col3:
+        st.metric("Avg Speed (m/s)", f"{route_summary['avg_speed']:.2f}")
+
+    # Row 5: Acceleration metrics
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Min Acceleration (m/s²)", f"{route_summary['min_acceleration']:.2f}")
+    with col2:
+        st.metric("Max Acceleration (m/s²)", f"{route_summary['max_acceleration']:.2f}")
+    with col3:
+        st.metric("Avg Acceleration (m/s²)", f"{route_summary['avg_acceleration']:.2f}")
 
     if run:
         # --- Prepare bus and engine ---
@@ -146,67 +177,113 @@ if route_file is not None:
 
         st.subheader("Simulation summary")
 
-        st.write("Simulation type: ", simulation_results["simulation_type"])
-        st.write(
-            "Total Rolling Resistance Force (N): ",
-            f"{simulation_results['total_rolling_resistance_force']:.2f}",
-        )
-        st.write(
-            "Total Aerodynamic Drag Force (N): ",
-            f"{simulation_results['total_aerodynamic_drag_force']:.2f}",
-        )
-        st.write(
-            "Total Hill Climb Resistance Force (N): ",
-            f"{simulation_results['total_hill_climb_resistance_force']:.2f}",
-        )
-        st.write(
-            "Total Linear Acceleration Force (N): ",
-            f"{simulation_results['total_linear_acceleration_force']:.2f}",
-        )
-        st.write(
-            "Total Tractive Force (N): ",
-            f"{simulation_results['total_tractive_force']:.2f}",
-        )
-        st.write(
-            "Total Rolling Resistance Consumption (kWh): ",
-            f"{joules_to_kwh(simulation_results['total_rolling_resistance_consumption']):.2f}",
-        )
-        st.write(
-            "Total Aerodynamic Drag Consumption (kWh): ",
-            f"{joules_to_kwh(simulation_results['total_aerodynamic_drag_consumption']):.2f}",
-        )
-        st.write(
-            "Total Hill Climb Consumption (kWh): ",
-            f"{joules_to_kwh(simulation_results['total_hill_climb_consumption']):.2f}",
-        )
-        st.write(
-            "Total Linear Acceleration Consumption (kWh): ",
-            f"{joules_to_kwh(simulation_results['total_linear_acceleration_consumption']):.2f}",
-        )
-        st.write(
-            "Total Consumption (kWh): ",
-            f"{joules_to_kwh(simulation_results['total_consumption']):.2f}",
-        )
-        st.write(
-            "Total Regeneration (kWh): ",
-            f"{joules_to_kwh(simulation_results['total_regeneration']):.2f}",
-        )
-        st.write(
-            "Total Net Consumption (kWh): ",
-            f"{joules_to_kwh(simulation_results['total_net_consumption']):.2f}",
-        )
-        st.write(
-            "Percentage Consumption (%): ",
-            f"{simulation_results['percentage_consumption']:.2f}",
-        )
-        st.write(
-            "Net Consumption per km (kWh/km): ",
-            f"{joules_to_kwh(simulation_results['net_consumption_per_km']):.2f}",
-        )
-        st.write(
-            "Net Consumption per 100km (kWh/100km): ",
-            f"{joules_to_kwh(simulation_results['net_consumption_per_100km']):.2f}",
-        )
+        # Simulation type row
+        st.metric("Simulation Type", simulation_results["simulation_type"])
+
+        # Force metrics - Row 1
+        st.write("**Forces (N)**")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric(
+                "Rolling Resistance",
+                f"{simulation_results['total_rolling_resistance_force']:.2f}",
+            )
+        with col2:
+            st.metric(
+                "Aerodynamic Drag",
+                f"{simulation_results['total_aerodynamic_drag_force']:.2f}",
+            )
+        with col3:
+            st.metric(
+                "Hill Climb Resistance",
+                f"{simulation_results['total_hill_climb_resistance_force']:.2f}",
+            )
+
+        # Force metrics - Row 2
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric(
+                "Linear Acceleration",
+                f"{simulation_results['total_linear_acceleration_force']:.2f}",
+            )
+        with col2:
+            st.metric(
+                "Total Tractive Force",
+                f"{simulation_results['total_tractive_force']:.2f}",
+            )
+        with col3:
+            # Empty placeholder for visual balance
+            st.empty()
+
+        # Consumption metrics - Row 1
+        st.write("**Energy Consumption (kWh)**")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric(
+                "Rolling Resistance",
+                f"{joules_to_kwh(simulation_results['total_rolling_resistance_consumption']):.2f}",
+            )
+        with col2:
+            st.metric(
+                "Aerodynamic Drag",
+                f"{joules_to_kwh(simulation_results['total_aerodynamic_drag_consumption']):.2f}",
+            )
+        with col3:
+            st.metric(
+                "Hill Climb",
+                f"{joules_to_kwh(simulation_results['total_hill_climb_consumption']):.2f}",
+            )
+
+        # Consumption metrics - Row 2
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric(
+                "Linear Acceleration",
+                f"{joules_to_kwh(simulation_results['total_linear_acceleration_consumption']):.2f}",
+            )
+        with col2:
+            st.metric(
+                "Total Consumption",
+                f"{joules_to_kwh(simulation_results['total_consumption']):.2f}",
+            )
+        with col3:
+            # Empty placeholder for visual balance
+            st.empty()
+
+        # Final energy metrics
+        st.write("**Energy Summary**")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric(
+                "Total Regeneration (kWh)",
+                f"{joules_to_kwh(simulation_results['total_regeneration']):.2f}",
+            )
+        with col2:
+            st.metric(
+                "Total Net Consumption (kWh)",
+                f"{joules_to_kwh(simulation_results['total_net_consumption']):.2f}",
+            )
+        with col3:
+            st.metric(
+                "Percentage Consumption (%)",
+                f"{simulation_results['percentage_consumption']:.2f}",
+            )
+
+        # Efficiency metrics
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric(
+                "Net Consumption (kWh/km)",
+                f"{joules_to_kwh(simulation_results['net_consumption_per_km']):.2f}",
+            )
+        with col2:
+            st.metric(
+                "Net Consumption (kWh/100km)",
+                f"{joules_to_kwh(simulation_results['net_consumption_per_100km']):.2f}",
+            )
+        with col3:
+            # Empty placeholder for visual balance
+            st.empty()
 
         st.subheader("Simulation results per segment")
         st.dataframe(results_per_segment)
