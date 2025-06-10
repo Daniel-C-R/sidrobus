@@ -155,14 +155,11 @@ class Bus:
         hill_climb_resistance = self.compute_route_hill_climb_resistance_forces(route)
         linear_acceleration_force = self.compute_linear_acceleration_forces(route)
 
-        mask_hill_climb = hill_climb_resistance > 0
-        mask_linear_acceleration = linear_acceleration_force > 0
-
         return (
             rolling_resistance
             + aerodynamic_drag
-            + hill_climb_resistance * mask_hill_climb
-            + linear_acceleration_force * mask_linear_acceleration
+            + hill_climb_resistance
+            + linear_acceleration_force
         )
 
     def compute_route_rolling_resistance_consumption(
@@ -249,12 +246,9 @@ class Bus:
         Returns:
             npt.NDArray[np.float64]: The total energy regeneration for the route.
         """
-        hill_climb_resistances = self.compute_route_hill_climb_resistance_forces(route)
-        linear_acceleration_forces = self.compute_linear_acceleration_forces(route)
+        tractive_forces = self.compute_route_tractive_forces(route)
 
-        return self._engine.compute_route_regeneration(
-            route, hill_climb_resistances, linear_acceleration_forces
-        )
+        return self._engine.compute_route_regeneration(route, tractive_forces)
 
     def compute_route_final_consumption(
         self, route: Route, modify_bus: bool = False
@@ -277,8 +271,6 @@ class Bus:
         return self._engine.compute_route_final_consumption(
             route,
             self.compute_route_tractive_forces(route),
-            self.compute_route_hill_climb_resistance_forces(route),
-            self.compute_linear_acceleration_forces(route),
             modify_engine=modify_bus,
         )
 

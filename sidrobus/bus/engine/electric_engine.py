@@ -52,8 +52,7 @@ class ElectricEngine(AbstractEngine):
     def compute_route_regeneration(
         self,
         route: Route,
-        hill_climb_forces: npt.NDArray[np.float64],
-        linear_acceleration_forces: npt.NDArray[np.float64],
+        tractive_forces: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
         """Calculate the energy regeneration for a given route.
 
@@ -62,23 +61,18 @@ class ElectricEngine(AbstractEngine):
 
         Args:
             route (Route): The route for which the regeneration is to be calculated.
-            hill_climb_forces (npt.NDArray[np.float64]): Hill climb resistance
-                forces.
-            linear_acceleration_forces (npt.NDArray[np.float64]): Linear acceleration
-                forces.
+            tractive_forces (npt.NDArray[np.float64]): The tractive forces acting on the
+                bus during the route.
 
         Returns:
             npt.NDArray[np.float64]: Array of energy regeneration values for each
                 segment.
         """
-        hill_climb_mask = hill_climb_forces < 0
-        linear_acceleration_mask = linear_acceleration_forces < 0
+        mask = tractive_forces < 0
 
         return (
-            hill_climb_forces
+            tractive_forces
+            * mask
             * route.distances
-            * hill_climb_mask
-            * linear_acceleration_forces
-            * route.distances
-            * linear_acceleration_mask
-        ) * self._regenerative_braking_efficiency
+            * self._regenerative_braking_efficiency
+        )

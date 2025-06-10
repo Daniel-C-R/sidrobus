@@ -208,8 +208,7 @@ class AbstractEngine(ABC):
     def compute_route_regeneration(
         self,
         route: Route,  # noqa: ARG002
-        hill_climb_forces: NDArray[np.float64],  # noqa: ARG002
-        linear_acceleration_forces: NDArray[np.float64],  # noqa: ARG002
+        tractive_forces: NDArray[np.float64],  # noqa: ARG002
     ) -> NDArray[np.float64]:
         """Calculate the energy regeneration for a given route.
 
@@ -220,9 +219,7 @@ class AbstractEngine(ABC):
 
         Args:
             route (Route): The route for which the regeneration is to be calculated.
-            hill_climb_forces (NDArray[np.float64]): Forces due to hill climbing.
-            linear_acceleration_forces (NDArray[np.float64]): Forces due to linear
-                acceleration.
+            tractive_forces (NDArray[np.float64]): An array of tractive forces for each
 
         Returns:
             NDArray[np.float64]: An array of energy regeneration values for each segment
@@ -233,9 +230,7 @@ class AbstractEngine(ABC):
     def compute_route_final_consumption(
         self,
         route: Route,
-        tractive_efforts: NDArray[np.float64],
-        hill_climb_resistances: NDArray[np.float64],
-        linear_acceleration_forces: NDArray[np.float64],
+        tractive_forces: NDArray[np.float64],
         modify_engine: bool = False,
     ) -> NDArray[np.float64]:
         """Calculate the net energy consumption for a given route.
@@ -246,21 +241,15 @@ class AbstractEngine(ABC):
         Args:
             route (Route): The route for which the energy consumption is to be
                 calculated.
-            tractive_efforts (NDArray[np.float64]): Tractive forces for each segment.
-            hill_climb_resistances (NDArray[np.float64]): Hill climb resistances for
-                each segment.
-            linear_acceleration_forces (NDArray[np.float64]): Linear acceleration forces
-                for each segment.
+            tractive_forces (NDArray[np.float64]): Tractive forces for each segment.
             modify_engine (bool, optional): If True, modifies the engine's energy state.
 
         Returns:
             NDArray[np.float64]: Net energy consumption for each segment.
         """
-        consumption = self.compute_route_consumption(tractive_efforts, route)
+        consumption = self.compute_route_consumption(tractive_forces, route)
 
-        regeneration = self.compute_route_regeneration(
-            route, hill_climb_resistances, linear_acceleration_forces
-        )
+        regeneration = self.compute_route_regeneration(route, tractive_forces)
 
         if modify_engine:
             self._energy -= np.sum(consumption - regeneration)
