@@ -13,6 +13,7 @@ dependencies = [
     "folium (>=0.19.6,<0.20.0)",
     "streamlit-folium (>=0.25.0,<0.26.0)",
     "altair[all] (>=5.5.0,<6.0.0)",
+    "scipy (>=1.15.3,<2.0.0)",
 ]
 
 
@@ -63,3 +64,4 @@ fixture-parentheses = false
 [tool.poetry.scripts]
 kml-to-csv = "scripts.kml_to_csv:main"
 preprocess-matlab-csv = "scripts.preprocess_matlab_csv:main"
+filter-altitude = "scripts.filter_altitude:main"
