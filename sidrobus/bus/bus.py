@@ -356,6 +356,9 @@ class Bus:
             else 0.0
         )
 
+        if regeneration.shape[0] == 1:
+            regeneration = np.zeros_like(net_consumptions)
+
         if modify_bus:
             self._engine.energy -= total_net_consumption
 
