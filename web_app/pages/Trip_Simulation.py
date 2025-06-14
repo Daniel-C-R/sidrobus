@@ -13,6 +13,18 @@ from web_app.interactive_plotting import plot_route_data, plot_simulation_result
 from web_app.map_plotting import plot_route_map, plot_simulation_results_map
 
 
+def joules_to_diesel_liters(joules: float) -> float:
+    """Convert joules to diesel liters.
+
+    Parameters:
+    joules (float): Energy in joules.
+
+    Returns:
+    float: Volume in diesel liters.
+    """
+    return joules / DIESEL_LHV
+
+
 def snake_to_title(snake_str: str) -> str:
     """Convert snake_case string to Title Case."""
     return snake_str.replace("_", " ").title()
@@ -216,74 +228,59 @@ if route_file is not None:
             st.empty()
 
         # Consumption metrics - Row 1
-        st.write("**Energy Consumption (kWh)**")
+        st.write("**Energy Summary**")
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric(
-                "Rolling Resistance",
-                f"{joules_to_kwh(simulation_results['total_rolling_resistance_consumption']):.2f}",
+                "Total Energy Consumed (kWh)",
+                f"{joules_to_kwh(simulation_results['total_consumption']):.2f}",
             )
         with col2:
             st.metric(
-                "Aerodynamic Drag",
-                f"{joules_to_kwh(simulation_results['total_aerodynamic_drag_consumption']):.2f}",
+                "Total Regeneration (kWh)",
+                f"{joules_to_kwh(simulation_results['total_regeneration']):.2f}",
             )
         with col3:
             st.metric(
-                "Hill Climb",
-                f"{joules_to_kwh(simulation_results['total_hill_climb_consumption']):.2f}",
+                "Total Net Consumption (kWh)",
+                f"{joules_to_kwh(simulation_results['total_net_consumption']):.2f}",
             )
 
         # Consumption metrics - Row 2
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric(
-                "Linear Acceleration",
-                f"{joules_to_kwh(simulation_results['total_linear_acceleration_consumption']):.2f}",
-            )
+            if simulation_results["simulation_type"] == "Fuel":
+                st.metric(
+                    "Total Diesel Consumed (L)",
+                    f"{joules_to_diesel_liters(simulation_results['total_consumption']):.2f}",
+                )
+            else:
+                st.metric(
+                    "Percentage Consumption (%)",
+                    f"{simulation_results['percentage_consumption']:.2f}",
+                )
         with col2:
-            st.metric(
-                "Total Consumption",
-                f"{joules_to_kwh(simulation_results['total_consumption']):.2f}",
-            )
+            if simulation_results["simulation_type"] == "Electric":
+                st.metric(
+                    "Energy for 1 km (kWh)",
+                    f"{joules_to_kwh(simulation_results['energy_for_1km']):.2f}",
+                )
+            else:  # Fuel engine
+                st.metric(
+                    "Diesel for 1 km (L)",
+                    f"{joules_to_diesel_liters(simulation_results['energy_for_1km']):.4f}",
+                )
         with col3:
-            # Empty placeholder for visual balance
-            st.empty()
-
-        # Final energy metrics
-        st.write("**Energy Summary**")
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric(
-                "Total Regeneration (kWh)",
-                f"{joules_to_kwh(simulation_results['total_regeneration']):.2f}",
-            )
-        with col2:
-            st.metric(
-                "Total Net Consumption (kWh)",
-                f"{joules_to_kwh(simulation_results['total_net_consumption']):.2f}",
-            )
-        with col3:
-            st.metric(
-                "Percentage Consumption (%)",
-                f"{simulation_results['percentage_consumption']:.2f}",
-            )
-
-        # Efficiency metrics
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric(
-                "Net Consumption (kWh/km)",
-                f"{joules_to_kwh(simulation_results['net_consumption_per_km']):.2f}",
-            )
-        with col2:
-            st.metric(
-                "Net Consumption (kWh/100km)",
-                f"{joules_to_kwh(simulation_results['net_consumption_per_100km']):.2f}",
-            )
-        with col3:
-            # Empty placeholder for visual balance
-            st.empty()
+            if simulation_results["simulation_type"] == "Electric":
+                st.metric(
+                    "Energy for 100 km (kWh)",
+                    f"{joules_to_kwh(simulation_results['energy_for_100km']):.2f}",
+                )
+            else:  # Fuel engine
+                st.metric(
+                    "Diesel for 100 km (L)",
+                    f"{joules_to_diesel_liters(simulation_results['energy_for_100km']):.2f}",
+                )
 
         st.subheader("Simulation results per segment")
         st.dataframe(results_per_segment)

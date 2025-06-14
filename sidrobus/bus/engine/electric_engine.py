@@ -70,7 +70,7 @@ class ElectricEngine(AbstractEngine):
         """
         mask = tractive_forces < 0
 
-        return (
+        return np.abs(
             tractive_forces
             * mask
             * route.distances

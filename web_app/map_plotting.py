@@ -210,35 +210,6 @@ def plot_simulation_results_map(route: Route, results: pd.DataFrame) -> folium.M
             ).add_to(fg_regen)
         fg_regen.add_to(m)
 
-    # Component-specific consumptions (hidden by default)
-    components = [
-        "rolling_resistance_consumption",
-        "aerodynamic_drag_consumption",
-        "hill_climb_consumption",
-        "linear_acceleration_consumption",
-    ]
-
-    for component in components:
-        if component in results:
-            values = results[component]
-            colors = color_gradient(values.to_numpy(), viridis_colors)
-            # Format component name for display
-            display_name = component.replace("_", " ").title()
-            fg_comp = folium.FeatureGroup(name=display_name, show=False)
-
-            for i in range(len(values) - 1):
-                folium.PolyLine(
-                    locations=[
-                        (route.latitudes[i], route.longitudes[i]),
-                        (route.latitudes[i + 1], route.longitudes[i + 1]),
-                    ],
-                    color=colors[i],
-                    weight=4,
-                    opacity=0.8,
-                    tooltip=f"{display_name}: {values[i]:.2f} kWh",
-                ).add_to(fg_comp)
-            fg_comp.add_to(m)
-
     # Forces visualization (hidden by default)
     force_components = [
         "rolling_resistance",

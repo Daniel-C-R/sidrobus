@@ -99,90 +99,6 @@ class AbstractEngine(ABC):
         """
         return self._mass
 
-    def compute_route_rolling_resistance_consuption(
-        self, route: Route, rolling_resistance_forces: NDArray[np.float64]
-    ) -> NDArray[np.float64]:
-        """Calculate the fuel consumption for rolling resistance forces along a route.
-
-        Args:
-            route (Route): The route object containing information such as distances
-                for each segment of the route.
-            rolling_resistance_forces (NDArray[np.float64]): An array of rolling
-                resistance forces applied at different points along the route.
-
-        Returns:
-            NDArray[np.float64]: An array of fuel consumption values corresponding
-                to each segment of the route.
-        """
-        return (rolling_resistance_forces * route.distances / self._efficiency).astype(
-            np.float64
-        )
-
-    def compute_route_aerodynamic_drag_consumption(
-        self,
-        route: Route,
-        aerodynamic_drag_forces: NDArray[np.float64],
-    ) -> NDArray[np.float64]:
-        """Calculate the fuel consumption for aerodynamic drag forces along a route.
-
-        Args:
-            route (Route): The route object containing information such as distances
-                for each segment of the route.
-            aerodynamic_drag_forces (NDArray[np.float64]): An array of aerodynamic
-                drag forces applied at different points along the route.
-
-        Returns:
-            NDArray[np.float64]: An array of fuel consumption values corresponding
-                to each segment of the route.
-        """
-        return (aerodynamic_drag_forces * route.distances / self._efficiency).astype(
-            np.float64
-        )
-
-    def compute_route_hill_climb_consumption(
-        self,
-        route: Route,
-        hill_climb_resistances: NDArray[np.float64],
-    ) -> NDArray[np.float64]:
-        """Calculate the fuel consumption for hill climb resistances along a route.
-
-        Args:
-            route (Route): The route object containing information such as distances
-                for each segment of the route.
-            hill_climb_resistances (NDArray[np.float64]): An array of hill climb
-                resistances applied at different points along the route.
-
-        Returns:
-            NDArray[np.float64]: An array of fuel consumption values corresponding
-                to each segment of the route.
-        """
-        mask = hill_climb_resistances > 0
-        return (
-            hill_climb_resistances * mask * route.distances / self._efficiency
-        ).astype(np.float64)
-
-    def compute_route_linear_acceleration_consumption(
-        self,
-        route: Route,
-        linear_acceleration_forces: NDArray[np.float64],
-    ) -> NDArray[np.float64]:
-        """Calculate the fuel consumption for linear acceleration forces along a route.
-
-        Args:
-            route (Route): The route object containing information such as distances
-                for each segment of the route.
-            linear_acceleration_forces (NDArray[np.float64]): An array of linear
-                acceleration forces applied at different points along the route.
-
-        Returns:
-            NDArray[np.float64]: An array of fuel consumption values corresponding
-                to each segment of the route.
-        """
-        mask = linear_acceleration_forces > 0
-        return (
-            linear_acceleration_forces * mask * route.distances / self._efficiency
-        ).astype(np.float64)
-
     def compute_route_consumption(
         self,
         tractive_efforts: NDArray[np.float64],
@@ -201,7 +117,8 @@ class AbstractEngine(ABC):
                 each segment of the route, calculated based on the tractive efforts and
                 the engine's efficiency.
         """
-        return (tractive_efforts * route.distances / self._efficiency).astype(
+        mask = tractive_efforts > 0
+        return (tractive_efforts * mask * route.distances / self._efficiency).astype(
             np.float64
         )
 
@@ -227,7 +144,7 @@ class AbstractEngine(ABC):
         """
         return np.array([0], dtype=np.float64)
 
-    def compute_route_final_consumption(
+    def compute_route_net_consumption(
         self,
         route: Route,
         tractive_forces: NDArray[np.float64],
