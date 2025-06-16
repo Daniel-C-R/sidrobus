@@ -5,6 +5,7 @@ from abc import ABC
 import numpy as np
 from numpy.typing import NDArray
 
+from sidrobus.bus.emissions_standard import NULL_EMISSIONS_STANDARD, EmissionsStandard
 from sidrobus.route import Route
 
 
@@ -21,6 +22,7 @@ class AbstractEngine(ABC):
     _mass: float
     _energy: float
     _capacity: float
+    _emissions_standard: EmissionsStandard
 
     def __init__(
         self,
@@ -28,6 +30,7 @@ class AbstractEngine(ABC):
         capacity: float,
         mass: float,
         energy: float | None = None,
+        emissions_standard: EmissionsStandard = NULL_EMISSIONS_STANDARD,
     ) -> None:
         """Intializes the engine.
 
@@ -36,6 +39,8 @@ class AbstractEngine(ABC):
             capacity (float): Maximum energy capacity of the engine in Joules.
             mass (float): Mass of the engine.
             energy (float, optional): Current energy level of the engine in Joules.
+            emissions_standard (EmissionsStandard, optional): Emissions standard for the
+                engine.
 
         Returns:
             None
@@ -44,6 +49,16 @@ class AbstractEngine(ABC):
         self._capacity = capacity
         self._mass = mass
         self._energy = energy if energy is not None else capacity
+        self._emissions_standard = emissions_standard
+
+    @property
+    def emissions_standard_name(self) -> str:
+        """Return the name of the emissions standard.
+
+        Returns:
+            str: Name of the emissions standard.
+        """
+        return self._emissions_standard.name
 
     @property
     def engine_type(self) -> str:
@@ -172,3 +187,95 @@ class AbstractEngine(ABC):
             self._energy -= np.sum(consumption - regeneration)
 
         return consumption - regeneration
+
+    def compute_route_co_emissions(
+        self,
+        route: Route,
+        tractive_forces: NDArray[np.float64],
+    ) -> NDArray[np.float64]:
+        """Calculate the CO emissions for a given route.
+
+        This method computes the CO emissions based on the tractive forces and the
+        emissions standard of the engine.
+
+        Args:
+            route (Route): The route for which the CO emissions are to be calculated.
+            tractive_forces (NDArray[np.float64]): The tractive forces acting on the bus
+                during the route.
+
+        Returns:
+            NDArray[np.float64]: Array of CO emissions values for each segment.
+        """
+        consumption_joules = self.compute_route_net_consumption(route, tractive_forces)
+        # Convert from Joules to kWh: 1 kWh = 3.6e6 J
+        consumption_kwh = consumption_joules / 3.6e6
+        return self._emissions_standard.co_per_kwh * consumption_kwh
+
+    def compute_route_nox_emissions(
+        self,
+        route: Route,
+        tractive_forces: NDArray[np.float64],
+    ) -> NDArray[np.float64]:
+        """Calculate the NOx emissions for a given route.
+
+        This method computes the NOx emissions based on the tractive forces and the
+        emissions standard of the engine.
+
+        Args:
+            route (Route): The route for which the NOx emissions are to be calculated.
+            tractive_forces (NDArray[np.float64]): The tractive forces acting on the bus
+                during the route.
+
+        Returns:
+            NDArray[np.float64]: Array of NOx emissions values for each segment.
+        """
+        consumption_joules = self.compute_route_net_consumption(route, tractive_forces)
+        # Convert from Joules to kWh: 1 kWh = 3.6e6 J
+        consumption_kwh = consumption_joules / 3.6e6
+        return self._emissions_standard.nox_per_kwh * consumption_kwh
+
+    def compute_route_hc_emissions(
+        self,
+        route: Route,
+        tractive_forces: NDArray[np.float64],
+    ) -> NDArray[np.float64]:
+        """Calculate the HC emissions for a given route.
+
+        This method computes the HC emissions based on the tractive forces and the
+        emissions standard of the engine.
+
+        Args:
+            route (Route): The route for which the HC emissions are to be calculated.
+            tractive_forces (NDArray[np.float64]): The tractive forces acting on the bus
+                during the route.
+
+        Returns:
+            NDArray[np.float64]: Array of HC emissions values for each segment.
+        """
+        consumption_joules = self.compute_route_net_consumption(route, tractive_forces)
+        # Convert from Joules to kWh: 1 kWh = 3.6e6 J
+        consumption_kwh = consumption_joules / 3.6e6
+        return self._emissions_standard.hc_per_kwh * consumption_kwh
+
+    def compute_route_pm_emissions(
+        self,
+        route: Route,
+        tractive_forces: NDArray[np.float64],
+    ) -> NDArray[np.float64]:
+        """Calculate the PM emissions for a given route.
+
+        This method computes the PM emissions based on the tractive forces and the
+        emissions standard of the engine.
+
+        Args:
+            route (Route): The route for which the PM emissions are to be calculated.
+            tractive_forces (NDArray[np.float64]): The tractive forces acting on the bus
+                during the route.
+
+        Returns:
+            NDArray[np.float64]: Array of PM emissions values for each segment.
+        """
+        consumption_joules = self.compute_route_net_consumption(route, tractive_forces)
+        # Convert from Joules to kWh: 1 kWh = 3.6e6 J
+        consumption_kwh = consumption_joules / 3.6e6
+        return self._emissions_standard.pm_per_kwh * consumption_kwh

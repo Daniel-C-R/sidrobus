@@ -3,6 +3,7 @@
 import numpy as np
 from numpy import typing as npt
 
+from sidrobus.bus.emissions_standard import NULL_EMISSIONS_STANDARD
 from sidrobus.bus.engine import AbstractEngine
 from sidrobus.route import Route
 
@@ -38,7 +39,7 @@ class ElectricEngine(AbstractEngine):
             energy (float, optional): The current energy level of the engine in Joules.
                 Defaults to None, which means the engine starts with full capacity.
         """
-        super().__init__(efficiency, capacity, mass, energy)
+        super().__init__(efficiency, capacity, mass, energy, NULL_EMISSIONS_STANDARD)
         self._regenerative_braking_efficiency = regenerative_braking_efficiency
 
     @property

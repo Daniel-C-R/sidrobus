@@ -5,6 +5,8 @@ import streamlit as st
 from streamlit_folium import folium_static
 
 from sidrobus.bus import Bus
+from sidrobus.bus.emissions_standard import EmissionsStandard
+from sidrobus.bus.emissions_standard.euro_standards import EURO_VI
 from sidrobus.bus.engine import ElectricEngine, FuelEngine
 from sidrobus.constants import DIESEL_LHV
 from sidrobus.route import Route
@@ -60,6 +62,11 @@ with st.sidebar:
 
     energy_capacity = 0.0
     regenerative_braking_efficiency = 0.0
+    # Default values from EURO VI standard
+    co_per_kwh = EURO_VI.co_per_kwh
+    nox_per_kwh = EURO_VI.nox_per_kwh
+    hc_per_kwh = EURO_VI.hc_per_kwh
+    pm_per_kwh = EURO_VI.pm_per_kwh
 
     if engine_type == "Electric":
         energy_capacity = st.number_input(
@@ -76,6 +83,38 @@ with st.sidebar:
         energy_capacity = (
             st.number_input("Fuel Tank Capacity (liters)", min_value=1.0, value=100.0)
             * DIESEL_LHV
+        )
+
+        # Custom emissions parameters
+        st.write("**Emissions Parameters (g/kWh)**")
+        st.caption("Default values correspond to EURO VI standard")
+        co_per_kwh = st.number_input(
+            "CO (g/kWh)",
+            min_value=0.0,
+            value=EURO_VI.co_per_kwh,
+            step=0.01,
+            help="Carbon monoxide emissions in grams per kilowatt-hour",
+        )
+        nox_per_kwh = st.number_input(
+            "NOx (g/kWh)",
+            min_value=0.0,
+            value=EURO_VI.nox_per_kwh,
+            step=0.01,
+            help="Nitrogen oxides emissions in grams per kilowatt-hour",
+        )
+        hc_per_kwh = st.number_input(
+            "HC (g/kWh)",
+            min_value=0.0,
+            value=EURO_VI.hc_per_kwh,
+            step=0.01,
+            help="Hydrocarbon emissions in grams per kilowatt-hour",
+        )
+        pm_per_kwh = st.number_input(
+            "PM (g/kWh)",
+            min_value=0.0,
+            value=EURO_VI.pm_per_kwh,
+            step=0.01,
+            help="Particulate matter emissions in grams per kilowatt-hour",
         )
 
     run = st.button(
@@ -167,10 +206,20 @@ if route_file is not None:
                 regenerative_braking_efficiency=regenerative_braking_efficiency,
             )
         else:
+            # Create a custom emissions standard with the input values
+            custom_emissions_standard = EmissionsStandard(
+                co_per_kwh=co_per_kwh,
+                nox_per_kwh=nox_per_kwh,
+                hc_per_kwh=hc_per_kwh,
+                pm_per_kwh=pm_per_kwh,
+                name="Custom Emissions Standard",
+            )
+
             engine = FuelEngine(
                 efficiency=energy_efficiency,
                 capacity=energy_capacity,
                 mass=0,
+                emissions_standard=custom_emissions_standard,
             )
         bus = Bus(
             model_name="",
@@ -244,9 +293,7 @@ if route_file is not None:
             st.metric(
                 "Total Net Consumption (kWh)",
                 f"{joules_to_kwh(simulation_results['total_net_consumption']):.2f}",
-            )
-
-        # Consumption metrics - Row 2
+            )  # Consumption metrics - Row 2
         col1, col2, col3 = st.columns(3)
         with col1:
             if simulation_results["simulation_type"] == "Fuel":
@@ -282,12 +329,78 @@ if route_file is not None:
                     f"{joules_to_diesel_liters(simulation_results['energy_for_100km']):.2f}",
                 )
 
+        # Emissions metrics (for Fuel engines only)
+        st.write("**Emissions (g)**")
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric(
+                "Total CO",
+                f"{simulation_results['total_co_emissions']:.2f}",
+            )
+        with col2:
+            st.metric(
+                "Total NOx",
+                f"{simulation_results['total_nox_emissions']:.2f}",
+            )
+        with col3:
+            st.metric(
+                "Total HC",
+                f"{simulation_results['total_hc_emissions']:.2f}",
+            )
+        with col4:
+            st.metric(
+                "Total PM",
+                f"{simulation_results['total_pm_emissions']:.2f}",
+            )
+
+        if engine_type == "Electric":
+            st.markdown("""
+            **Important:** Although electric buses do not emit pollutants directly, the
+            energy they use may come from sources that do generate emissions. Therefore,
+            it is necessary to investigate the origin of this energy to assess its real
+            environmental impact.
+            """)
+
         st.subheader("Simulation results per segment")
-        st.dataframe(results_per_segment)
+
+        # Create a user-friendly copy of the results with converted units
+        display_results = results_per_segment.copy()
+
+        # Convert energy values from Joules to kWh for display
+        energy_columns = ["consumption", "regeneration", "net_consumption"]
+        for col in energy_columns:
+            if col in display_results.columns:
+                display_results[col] = display_results[col].apply(joules_to_kwh)
+
+        # Rename columns for better readability
+        column_mapping = {
+            "consumption": "Consumption (kWh)",
+            "regeneration": "Regeneration (kWh)",
+            "net_consumption": "Net Consumption (kWh)",
+            "co_emissions": "CO Emissions (g)",
+            "nox_emissions": "NOx Emissions (g)",
+            "hc_emissions": "HC Emissions (g)",
+            "pm_emissions": "PM Emissions (g)",
+            "rolling_resistance": "Rolling Resistance (N)",
+            "aerodynamic_drag_resistance": "Aerodynamic Drag (N)",
+            "hill_climb_resistance": "Hill Climb Resistance (N)",
+            "linear_acceleration_force": "Linear Acceleration Force (N)",
+            "tractive_force": "Tractive Force (N)",
+        }
+
+        display_results = display_results.rename(columns=column_mapping)
+        st.dataframe(display_results)
 
         st.subheader("Simulation results map")
 
-        results_map = plot_simulation_results_map(route, results_per_segment)
+        # Create map-friendly data with original column names but converted energy units
+        map_results = results_per_segment.copy()
+        energy_columns = ["consumption", "regeneration", "net_consumption"]
+        for col in energy_columns:
+            if col in map_results.columns:
+                map_results[col] = map_results[col].apply(joules_to_kwh)
+
+        results_map = plot_simulation_results_map(route, map_results)
         folium_static(
             results_map,
             width=700,
@@ -297,7 +410,7 @@ if route_file is not None:
         st.altair_chart(
             plot_simulation_results(
                 times=route.times,
-                results=results_per_segment,
+                results=display_results,  # Use the display version with converted units
             ),
             use_container_width=True,
         )

@@ -240,6 +240,37 @@ def plot_simulation_results_map(route: Route, results: pd.DataFrame) -> folium.M
                 ).add_to(fg_force)
             fg_force.add_to(m)
 
+    # Emissions visualization (hidden by default)
+    emission_components = [
+        "co_emissions",
+        "nox_emissions",
+        "hc_emissions",
+        "pm_emissions",
+    ]
+
+    for component in emission_components:
+        if component in results:
+            values = results[component]
+            colors = color_gradient(values.to_numpy(), viridis_colors)
+            # Format component name for display
+            display_name = (
+                component.replace("_", " ").replace("emissions", "Emissions").upper()
+            )
+            fg_emission = folium.FeatureGroup(name=f"{display_name}", show=False)
+
+            for i in range(len(values) - 1):
+                folium.PolyLine(
+                    locations=[
+                        (route.latitudes[i], route.longitudes[i]),
+                        (route.latitudes[i + 1], route.longitudes[i + 1]),
+                    ],
+                    color=colors[i],
+                    weight=4,
+                    opacity=0.8,
+                    tooltip=f"{display_name}: {values[i]:.4f} g",
+                ).add_to(fg_emission)
+            fg_emission.add_to(m)
+
     # Add layer control
     folium.LayerControl().add_to(m)
 

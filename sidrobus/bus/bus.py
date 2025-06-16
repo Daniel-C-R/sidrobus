@@ -270,6 +270,66 @@ class Bus:
             modify_engine=modify_bus,
         )
 
+    def compute_route_co_emissions(self, route: Route) -> npt.NDArray[np.float64]:
+        """Calculate the CO emissions for a given route.
+
+        This method computes the CO emissions based on the engine's emissions standard
+        and the energy consumption for the route.
+
+        Args:
+            route (Route): The route for which the CO emissions are to be calculated.
+
+        Returns:
+            npt.NDArray[np.float64]: CO emissions for each segment of the route.
+        """
+        tractive_forces = self.compute_route_tractive_forces(route)
+        return self._engine.compute_route_co_emissions(route, tractive_forces)
+
+    def compute_route_nox_emissions(self, route: Route) -> npt.NDArray[np.float64]:
+        """Calculate the NOx emissions for a given route.
+
+        This method computes the NOx emissions based on the engine's emissions standard
+        and the energy consumption for the route.
+
+        Args:
+            route (Route): The route for which the NOx emissions are to be calculated.
+
+        Returns:
+            npt.NDArray[np.float64]: NOx emissions for each segment of the route.
+        """
+        tractive_forces = self.compute_route_tractive_forces(route)
+        return self._engine.compute_route_nox_emissions(route, tractive_forces)
+
+    def compute_route_hc_emissions(self, route: Route) -> npt.NDArray[np.float64]:
+        """Calculate the HC emissions for a given route.
+
+        This method computes the HC emissions based on the engine's emissions standard
+        and the energy consumption for the route.
+
+        Args:
+            route (Route): The route for which the HC emissions are to be calculated.
+
+        Returns:
+            npt.NDArray[np.float64]: HC emissions for each segment of the route.
+        """
+        tractive_forces = self.compute_route_tractive_forces(route)
+        return self._engine.compute_route_hc_emissions(route, tractive_forces)
+
+    def compute_route_pm_emissions(self, route: Route) -> npt.NDArray[np.float64]:
+        """Calculate the PM emissions for a given route.
+
+        This method computes the PM emissions based on the engine's emissions standard
+        and the energy consumption for the route.
+
+        Args:
+            route (Route): The route for which the PM emissions are to be calculated.
+
+        Returns:
+            npt.NDArray[np.float64]: PM emissions for each segment of the route.
+        """
+        tractive_forces = self.compute_route_tractive_forces(route)
+        return self._engine.compute_route_pm_emissions(route, tractive_forces)
+
     def simulate_trip(self, route: Route, modify_bus: bool = False) -> dict:
         """Simulate a trip for the bus over a given route.
 
@@ -329,6 +389,17 @@ class Bus:
         energy_for_1km: float = total_net_consumption / route.distances.sum() * 1000
         energy_for_100km: float = energy_for_1km * 100
 
+        co_emissions = self._engine.compute_route_co_emissions(route, tractive_forces)
+        nox_emissions = self._engine.compute_route_nox_emissions(route, tractive_forces)
+        hc_emissions = self._engine.compute_route_hc_emissions(route, tractive_forces)
+        pm_emissions = self._engine.compute_route_pm_emissions(route, tractive_forces)
+
+        # Calculate total emissions
+        total_co_emissions: float = co_emissions.sum()
+        total_nox_emissions: float = nox_emissions.sum()
+        total_hc_emissions: float = hc_emissions.sum()
+        total_pm_emissions: float = pm_emissions.sum()
+
         percentage_consumption = (
             total_consumption / self.energy_capacity * 100
             if self.energy_capacity > 0
@@ -354,6 +425,14 @@ class Bus:
             "percentage_consumption": percentage_consumption,
             "energy_for_1km": energy_for_1km,
             "energy_for_100km": energy_for_100km,
+            "co_emissions": co_emissions,
+            "nox_emissions": nox_emissions,
+            "hc_emissions": hc_emissions,
+            "pm_emissions": pm_emissions,
+            "total_co_emissions": total_co_emissions,
+            "total_nox_emissions": total_nox_emissions,
+            "total_hc_emissions": total_hc_emissions,
+            "total_pm_emissions": total_pm_emissions,
             "results_per_segment": {
                 "rolling_resistance": np.repeat(
                     total_rolling_resistance_force, len(net_consumptions)
@@ -365,5 +444,9 @@ class Bus:
                 "consumption": consumptions,
                 "regeneration": regeneration,
                 "net_consumption": net_consumptions,
+                "co_emissions": co_emissions,
+                "nox_emissions": nox_emissions,
+                "hc_emissions": hc_emissions,
+                "pm_emissions": pm_emissions,
             },
         }
