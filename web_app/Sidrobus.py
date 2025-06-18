@@ -2,7 +2,10 @@
 
 import streamlit as st
 
-st.title("Sidrobus")
+st.title("🍏🍾 Sidrobus 🚌🔋⚡️🔌 ")
+st.title("Electric and Fuel Bus Simulator")
+
+st.image("logo.png")
 
 st.markdown(
     """
