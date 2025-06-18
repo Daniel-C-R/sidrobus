@@ -7,6 +7,14 @@ from numpy import typing as npt
 
 from sidrobus.route import Route
 
+# Theme colors
+THEME_COLORS = {
+    "primary": "#2c4f2d",
+    "background": "#f9f3e5",
+    "secondary_bg": "#cddac4",
+    "text": "#21392b",
+}
+
 
 def plot_route_data(route: Route) -> alt.VConcatChart:
     """Creates an interactive Altair chart to visualize route data over time.
@@ -61,7 +69,7 @@ def plot_route_data(route: Route) -> alt.VConcatChart:
     # Create conditional time selectors for each measure
     altitude_selector = (
         alt.Chart(main_data)
-        .mark_area(color="blue", opacity=0.3)
+        .mark_area(color=THEME_COLORS["primary"], opacity=0.3)
         .encode(
             x=alt.X("time:Q", title="Time (s)"),
             y=alt.Y("altitude:Q", title="", axis=None),
@@ -72,7 +80,7 @@ def plot_route_data(route: Route) -> alt.VConcatChart:
 
     speed_selector = (
         alt.Chart(main_data)
-        .mark_area(color="green", opacity=0.3)
+        .mark_area(color=THEME_COLORS["primary"], opacity=0.3)
         .encode(
             x=alt.X("time:Q", title="Time (s)"), y=alt.Y("speed:Q", title="", axis=None)
         )
@@ -82,7 +90,7 @@ def plot_route_data(route: Route) -> alt.VConcatChart:
 
     acceleration_selector = (
         alt.Chart(accel_data)
-        .mark_area(color="red", opacity=0.3)
+        .mark_area(color=THEME_COLORS["primary"], opacity=0.3)
         .encode(
             x=alt.X("time:Q", title="Time (s)"),
             y=alt.Y("acceleration:Q", title="", axis=None),
@@ -118,7 +126,10 @@ def plot_route_data(route: Route) -> alt.VConcatChart:
     # Create the conditional visualization with three possible views
     main_chart = alt.layer(
         # Altitude visualization
-        base_chart.mark_line(color="blue", point=alt.OverlayMarkDef(color="blue"))
+        base_chart.mark_line(
+            color=THEME_COLORS["primary"],
+            point=alt.OverlayMarkDef(color=THEME_COLORS["primary"]),
+        )
         .encode(
             y=alt.Y("altitude:Q", title="Altitude (m)", scale=alt.Scale(zero=False)),
             tooltip=[
@@ -129,7 +140,10 @@ def plot_route_data(route: Route) -> alt.VConcatChart:
         )
         .transform_filter(measure_selection == "Altitude"),
         # Speed visualization
-        base_chart.mark_line(color="green", point=alt.OverlayMarkDef(color="green"))
+        base_chart.mark_line(
+            color=THEME_COLORS["primary"],
+            point=alt.OverlayMarkDef(color=THEME_COLORS["primary"]),
+        )
         .encode(
             y=alt.Y("speed:Q", title="Speed (m/s)"),
             tooltip=[
@@ -148,7 +162,10 @@ def plot_route_data(route: Route) -> alt.VConcatChart:
                 scale=alt.Scale(domain=time_brush),  # Use the brush selection here too
             )
         )
-        .mark_line(color="red", point=alt.OverlayMarkDef(color="red"))
+        .mark_line(
+            color=THEME_COLORS["primary"],
+            point=alt.OverlayMarkDef(color=THEME_COLORS["primary"]),
+        )
         .encode(
             y=alt.Y("acceleration:Q", title="Acceleration (m/s²)"),
             tooltip=[
@@ -172,19 +189,20 @@ def plot_route_data(route: Route) -> alt.VConcatChart:
 
 def plot_simulation_results(
     times: npt.NDArray[np.float64], results: pd.DataFrame
-) -> alt.Chart:
+) -> alt.VConcatChart:
     """Creates an interactive Altair chart to visualize simulation results over time.
 
     The graph displays time on the x-axis and allows the user to switch between
     different simulation metrics on the y-axis using a selection.
     Hovering over points shows all relevant data properties.
+    Includes a time interval selector for zooming into specific periods.
 
     Args:
         times (npt.NDArray[np.float64]): Array of time points
         results (pd.DataFrame): DataFrame containing simulation results per segment
 
     Returns:
-        alt.Chart: An Altair chart with interactive selection capabilities
+        alt.VConcatChart: An Altair chart with interactive selection capabilities
     """
     # Skip the first time point to match segment results (N-1 elements)
     segment_times = times[1:]
@@ -201,7 +219,6 @@ def plot_simulation_results(
             data = pd.concat([data, data_slice], ignore_index=True)
 
     # Create a selection for choosing the metric to display
-    # Set default to "net_consumption" if it exists, otherwise use the first metric
     default_metric = (
         "net_consumption"
         if "net_consumption" in results.columns
@@ -210,27 +227,42 @@ def plot_simulation_results(
 
     metric_selection = alt.param(
         name="metric_select",
-        value=default_metric,  # Default to net_consumption or first metric
+        value=default_metric,
         bind=alt.binding_select(
             options=sorted(data["metric"].unique().tolist()), name="Select Metric: "
         ),
     )
 
-    # Create the base chart
-    base_chart = (
+    # Time interval selector (brush)
+    time_brush = alt.selection_interval(encodings=["x"])
+
+    # Time selector area chart (shows the selected metric)
+    time_selector = (
         alt.Chart(data)
+        .mark_area(opacity=0.3, color=THEME_COLORS["secondary_bg"])
         .encode(
             x=alt.X("time:Q", title="Time (s)"),
+            y=alt.Y("value:Q", title="", axis=None),
         )
-        .properties(width=700, height=400, title="Simulation Results Over Time")
+        .transform_filter(alt.datum.metric == metric_selection)
+        .add_params(time_brush)
+        .properties(width=700, height=60, title="Time Selector")
     )
 
-    # Create the main visualization with metric selection
-    chart = (
-        base_chart.mark_line(point=True)
+    # Main chart with time brush and metric selection
+    main_chart = (
+        alt.Chart(data)
+        .encode(
+            x=alt.X(
+                "time:Q",
+                title="Time (s)",
+                scale=alt.Scale(domain=time_brush),
+            ),
+        )
+        .mark_line(point=True)
         .encode(
             y=alt.Y("value:Q", title="Value"),
-            color=alt.Color("metric:N", legend=None),
+            color=alt.value(THEME_COLORS["primary"]),
             tooltip=[
                 alt.Tooltip("time:Q", title="Time (s)", format=".2f"),
                 alt.Tooltip("value:Q", title="Value", format=".2f"),
@@ -239,9 +271,10 @@ def plot_simulation_results(
         )
         .transform_filter(alt.datum.metric == metric_selection)
         .add_params(metric_selection)
+        .properties(width=700, height=400, title="Simulation Results Over Time")
     )
 
-    return chart.configure_axis(
+    return alt.vconcat(main_chart, time_selector).configure_axis(
         labelPadding=10,
         titlePadding=10,
     )
