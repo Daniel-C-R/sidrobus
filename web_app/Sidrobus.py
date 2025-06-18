@@ -16,3 +16,15 @@ st.markdown(
      Historia](https://www.tua.es/es/tua/historia/)
     """
 )
+
+st.markdown("© 2025 Daniel Castaño Rodríguez")
+
+st.markdown(
+    """
+    **Disclaimer:** While every effort has been made to ensure the accuracy of the
+    calculations and information provided by this application, the results are offered
+    without any warranty, express or implied. The author accepts no responsibility for
+    any errors, omissions, or consequences arising from the use of the application.
+    Users agree to use the information at their own risk.
+    """
+)
