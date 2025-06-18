@@ -42,13 +42,13 @@ with st.sidebar:
 
     mass = st.number_input("Bus Mass (kg)", min_value=1000, value=12000)
     rolling_resistance_coef = st.number_input(
-        "Rolling Resistance Coefficient", min_value=0.0, value=0.01, step=0.001
+        "Rolling Resistance Coefficient [0, 1]", min_value=0.0, value=0.01, step=0.001
     )
     frontal_area = st.number_input(
-        "Frontal Area (m^2)", min_value=0.0, value=5.0, step=0.01
+        "Frontal Area (m²)", min_value=0.0, value=5.0, step=0.01
     )
     aerodynamic_drag_coef = st.number_input(
-        "Aerodynamic Drag Coefficient", min_value=0.0, value=0.6, step=0.01
+        "Aerodynamic Drag Coefficient [0, 1]", min_value=0.0, value=0.6, step=0.01
     )
     energy_efficiency = st.number_input(
         "Energy efficiency [0, 1]", min_value=0.0, max_value=1.0, value=0.9, step=0.01
@@ -81,7 +81,7 @@ with st.sidebar:
         )
     elif engine_type == "Diesel":
         energy_capacity = (
-            st.number_input("Fuel Tank Capacity (liters)", min_value=1.0, value=100.0)
+            st.number_input("Fuel Tank Capacity (L)", min_value=1.0, value=100.0)
             * DIESEL_LHV
         )
 
@@ -153,18 +153,20 @@ if route_file is not None:
     # Row 1: Basic route info
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Total Distance (m)", f"{route_summary['total_distance']:.2f}")
+        st.metric(
+            "Total Distance (km)", f"{route_summary['total_distance'] / 1000:.2f}"
+        )
     with col2:
         st.metric("Number of Points", route_summary["number_of_points"])
     with col3:
-        st.metric("Duration (s)", f"{route_summary['duration']:.2f}")
+        st.metric("Duration (min)", f"{route_summary['duration'] / 60:.2f}")
 
     # Row 2: Time info
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Start Time", route_summary["start_time"])
+        st.metric("Start Time (s)", route_summary["start_time"])
     with col2:
-        st.metric("End Time", route_summary["end_time"])
+        st.metric("End Time (s)", route_summary["end_time"])
     with col3:
         # Empty placeholder or we could add another relevant metric
         st.empty()
@@ -247,17 +249,17 @@ if route_file is not None:
         with col1:
             st.metric(
                 "Rolling Resistance",
-                f"{simulation_results['total_rolling_resistance_force']:.2f}",
+                f"{simulation_results['total_rolling_resistance_force']:.2e}",
             )
         with col2:
             st.metric(
                 "Aerodynamic Drag",
-                f"{simulation_results['total_aerodynamic_drag_force']:.2f}",
+                f"{simulation_results['total_aerodynamic_drag_force']:.2e}",
             )
         with col3:
             st.metric(
                 "Hill Climb Resistance",
-                f"{simulation_results['total_hill_climb_resistance_force']:.2f}",
+                f"{simulation_results['total_hill_climb_resistance_force']:.2e}",
             )
 
         # Force metrics - Row 2
@@ -265,12 +267,12 @@ if route_file is not None:
         with col1:
             st.metric(
                 "Linear Acceleration",
-                f"{simulation_results['total_linear_acceleration_force']:.2f}",
+                f"{simulation_results['total_linear_acceleration_force']:.2e}",
             )
         with col2:
             st.metric(
                 "Total Tractive Force",
-                f"{simulation_results['total_tractive_force']:.2f}",
+                f"{simulation_results['total_tractive_force']:.2e}",
             )
         with col3:
             # Empty placeholder for visual balance
@@ -307,29 +309,47 @@ if route_file is not None:
                     f"{simulation_results['percentage_consumption']:.2f}",
                 )
         with col2:
-            if simulation_results["simulation_type"] == "Electric":
+            if simulation_results["simulation_type"] == "Fuel":
+                st.metric(
+                    "Percentage Consumption (%)",
+                    f"{simulation_results['percentage_consumption']:.2f}",
+                )
+            else:  # Electric engine
                 st.metric(
                     "Energy for 1 km (kWh)",
                     f"{joules_to_kwh(simulation_results['energy_for_1km']):.2f}",
                 )
-            else:  # Fuel engine
+        with col3:
+            if simulation_results["simulation_type"] == "Fuel":
                 st.metric(
                     "Diesel for 1 km (L)",
                     f"{joules_to_diesel_liters(simulation_results['energy_for_1km']):.4f}",
                 )
-        with col3:
-            if simulation_results["simulation_type"] == "Electric":
+            else:  # Electric engine
                 st.metric(
                     "Energy for 100 km (kWh)",
                     f"{joules_to_kwh(simulation_results['energy_for_100km']):.2f}",
                 )
-            else:  # Fuel engine
+
+        # Row 3: Additional consumption metrics
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            if simulation_results["simulation_type"] == "Fuel":
                 st.metric(
                     "Diesel for 100 km (L)",
                     f"{joules_to_diesel_liters(simulation_results['energy_for_100km']):.2f}",
                 )
+            else:
+                # Empty placeholder for visual balance
+                st.empty()
+        with col2:
+            # Empty placeholder
+            st.empty()
+        with col3:
+            # Empty placeholder
+            st.empty()
 
-        # Emissions metrics (for Fuel engines only)
+        # Emissions metrics
         st.write("**Emissions (g)**")
         col1, col2, col3, col4 = st.columns(4)
         with col1:
@@ -353,7 +373,8 @@ if route_file is not None:
                 f"{simulation_results['total_pm_emissions']:.2f}",
             )
 
-        if engine_type == "Electric":
+        # Additional information for electric buses
+        if simulation_results["simulation_type"] == "Electric":
             st.markdown("""
             **Important:** Although electric buses do not emit pollutants directly, the
             energy they use may come from sources that do generate emissions. Therefore,
@@ -377,16 +398,33 @@ if route_file is not None:
             "consumption": "Consumption (kWh)",
             "regeneration": "Regeneration (kWh)",
             "net_consumption": "Net Consumption (kWh)",
-            "co_emissions": "CO Emissions (g)",
-            "nox_emissions": "NOx Emissions (g)",
-            "hc_emissions": "HC Emissions (g)",
-            "pm_emissions": "PM Emissions (g)",
             "rolling_resistance": "Rolling Resistance (N)",
             "aerodynamic_drag_resistance": "Aerodynamic Drag (N)",
             "hill_climb_resistance": "Hill Climb Resistance (N)",
             "linear_acceleration_force": "Linear Acceleration Force (N)",
             "tractive_force": "Tractive Force (N)",
         }
+
+        # Add emissions columns only for fuel engines
+        if simulation_results["simulation_type"] == "Fuel":
+            emissions_mapping = {
+                "co_emissions": "CO Emissions (g)",
+                "nox_emissions": "NOx Emissions (g)",
+                "hc_emissions": "HC Emissions (g)",
+                "pm_emissions": "PM Emissions (g)",
+            }
+            column_mapping.update(emissions_mapping)
+        else:
+            # Remove emissions columns for electric engines
+            emissions_columns = [
+                "co_emissions",
+                "nox_emissions",
+                "hc_emissions",
+                "pm_emissions",
+            ]
+            for col in emissions_columns:
+                if col in display_results.columns:
+                    display_results = display_results.drop(columns=[col])
 
         display_results = display_results.rename(columns=column_mapping)
         st.dataframe(display_results)
@@ -399,6 +437,18 @@ if route_file is not None:
         for col in energy_columns:
             if col in map_results.columns:
                 map_results[col] = map_results[col].apply(joules_to_kwh)
+
+        # Remove emissions columns for electric engines
+        if simulation_results["simulation_type"] == "Electric":
+            emissions_columns = [
+                "co_emissions",
+                "nox_emissions",
+                "hc_emissions",
+                "pm_emissions",
+            ]
+            for col in emissions_columns:
+                if col in map_results.columns:
+                    map_results = map_results.drop(columns=[col])
 
         results_map = plot_simulation_results_map(route, map_results)
         folium_static(
