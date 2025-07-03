@@ -8,6 +8,7 @@ from sidrobus.bus import Bus
 from sidrobus.bus.emissions_standard import EmissionsStandard
 from sidrobus.bus.emissions_standard.euro_standards import EURO_VI
 from sidrobus.bus.engine import AbstractEngine, ElectricEngine, FuelEngine
+from sidrobus.constants import DIESEL_LHV
 from sidrobus.unit_conversions import kwh_to_joules
 
 
@@ -15,7 +16,7 @@ from sidrobus.unit_conversions import kwh_to_joules
 class CapacityOption:
     """Data class representing a bus engine capacity option."""
 
-    capacity_kwh: float
+    capacity: float
 
 
 @dataclass
@@ -63,7 +64,7 @@ class ElectricEngineConfig(AbstractEngineConfig):
                 f"ElectricEngineConfig."
             )
             raise KeyError(error_message)
-        capacity = self.capacity_options[capacity_option_id].capacity_kwh
+        capacity = self.capacity_options[capacity_option_id].capacity
         return ElectricEngine(
             efficiency=self.efficiency,
             capacity=capacity,
@@ -93,7 +94,7 @@ class FuelEngineConfig(AbstractEngineConfig):
                 f"Capacity option '{capacity_option_id}' not found in FuelEngineConfig."
             )
             raise KeyError(error_message)
-        capacity = self.capacity_options[capacity_option_id].capacity_kwh
+        capacity = self.capacity_options[capacity_option_id].capacity
         return FuelEngine(
             efficiency=self.efficiency,
             capacity=capacity,
@@ -298,8 +299,7 @@ CITARO = BusModel(
     engine_options=FuelEngineConfig(
         efficiency=0.4,
         capacity_options={
-            "diesel": CapacityOption(kwh_to_joules(300)),
-            "cng": CapacityOption(kwh_to_joules(250)),
+            "260L": CapacityOption(260 * DIESEL_LHV),
         },
         emissions_standard=EURO_VI,
     ),
@@ -315,8 +315,7 @@ CITARO_G = BusModel(
     engine_options=FuelEngineConfig(
         efficiency=0.4,
         capacity_options={
-            "diesel": CapacityOption(kwh_to_joules(400)),
-            "cng": CapacityOption(kwh_to_joules(350)),
+            "300L": CapacityOption(300 * DIESEL_LHV),
         },
         emissions_standard=EURO_VI,
     ),

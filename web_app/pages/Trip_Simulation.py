@@ -195,11 +195,11 @@ def render_predefined_model_config() -> None:
     for option_id in capacity_option_ids:
         if selected_model.engine_type == "Fuel":
             # For fuel engines, show liters instead of kWh
-            capacity_liters = capacity_options[option_id].capacity_kwh / DIESEL_LHV
+            capacity_liters = capacity_options[option_id].capacity / DIESEL_LHV
             capacity_display_names.append(f"{option_id}: {capacity_liters:.0f} L")
         else:
             # For electric engines, show kWh
-            capacity_kwh = joules_to_kwh(capacity_options[option_id].capacity_kwh)
+            capacity_kwh = joules_to_kwh(capacity_options[option_id].capacity)
             capacity_display_names.append(f"{option_id}: {capacity_kwh:.0f} kWh")
 
     selected_capacity_index = st.selectbox(
@@ -244,7 +244,7 @@ def render_predefined_model_config() -> None:
 
     if use_custom_energy:
         max_capacity_kwh = joules_to_kwh(
-            capacity_options[selected_capacity_id].capacity_kwh
+            capacity_options[selected_capacity_id].capacity
         )
         energy_percentage = st.slider(
             "Initial Energy Level (%)",
@@ -403,7 +403,6 @@ def render_predefined_model_details(config: dict[str, Any]) -> None:
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("Model Information")
         st.write(f"**Name:** {selected_model.name}")
         st.write(f"**Manufacturer:** {selected_model.manufacturer}")
         st.write(f"**Engine Type:** {selected_model.engine_type}")
@@ -418,7 +417,6 @@ def render_predefined_model_details(config: dict[str, Any]) -> None:
             )
 
     with col2:
-        st.subheader("Technical Specifications")
         st.write(f"**Frontal Area:** {selected_model.frontal_area} m²")
         st.write(
             f"**Aerodynamic Drag Coefficient:** {selected_model.aerodynamic_drag_coef}"
@@ -432,7 +430,7 @@ def render_predefined_model_details(config: dict[str, Any]) -> None:
         # Show capacity information
         capacity_info = selected_model.capacity_options[config["selected_capacity_id"]]
         if selected_model.engine_type == "Fuel":
-            capacity_liters = capacity_info.capacity_kwh / DIESEL_LHV
+            capacity_liters = capacity_info.capacity / DIESEL_LHV
             st.write(f"**Tank Capacity:** {capacity_liters:.0f} L")
             if config.get("use_custom_energy", False) and config.get("custom_energy"):
                 initial_liters = joules_to_diesel_liters(config["custom_energy"])
@@ -441,7 +439,7 @@ def render_predefined_model_details(config: dict[str, Any]) -> None:
             else:
                 st.write(f"**Initial Fuel:** {capacity_liters:.0f} L (100%)")
         else:
-            capacity_kwh = joules_to_kwh(capacity_info.capacity_kwh)
+            capacity_kwh = joules_to_kwh(capacity_info.capacity)
             st.write(f"**Battery Capacity:** {capacity_kwh:.0f} kWh")
             use_custom_energy = config.get("use_custom_energy", False)
             custom_energy_kwh = config.get("custom_energy_kwh")
@@ -460,14 +458,12 @@ def render_manual_config_details(config: dict[str, Any]) -> None:
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("Bus Configuration")
         st.write("**Configuration Type:** Manual")
         st.write(f"**Mass:** {config['mass']:,} kg ({config['mass'] / 1000:.1f} tons)")
         st.write(f"**Frontal Area:** {config['frontal_area']} m²")
         st.write(f"**Engine Type:** {config['engine_type']}")
 
     with col2:
-        st.subheader("Technical Parameters")
         st.write(f"**Aerodynamic Drag Coefficient:** {config['aerodynamic_drag_coef']}")
         st.write(
             f"**Rolling Resistance Coefficient:** {config['rolling_resistance_coef']}"
@@ -853,7 +849,7 @@ def render_simulation_map_and_charts(
 
 def main() -> None:
     """Main application function."""
-    st.title("Bus Simulator")
+    st.title("Trip Simulation")
 
     # Render sidebar and get inputs
     route_file, run = render_sidebar()
