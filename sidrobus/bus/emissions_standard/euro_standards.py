@@ -19,8 +19,8 @@ EURO_V = EmissionsStandard(
 )
 
 EURO_VI = EmissionsStandard(
-    co_per_kwh=0.13,
-    nox_per_kwh=0.46,
+    co_per_kwh=1.5,
+    nox_per_kwh=0.13,
     hc_per_kwh=0.4,
     pm_per_kwh=0.01,
     name="EURO VI",
