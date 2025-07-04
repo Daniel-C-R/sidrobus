@@ -114,6 +114,15 @@ class AbstractEngine(ABC):
         """
         return self._mass
 
+    @property
+    def efficiency(self) -> float:
+        """Return the efficiency of the engine.
+
+        Returns:
+            float: Engine efficiency as a value between 0 and 1.
+        """
+        return self._efficiency
+
     def compute_route_consumption(
         self,
         tractive_efforts: NDArray[np.float64],

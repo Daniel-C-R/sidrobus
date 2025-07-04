@@ -75,6 +75,21 @@ class Bus:
         return self._engine.energy
 
     @property
+    def model_name(self) -> str:
+        """Returns the model name of the bus."""
+        return self._model_name
+
+    @property
+    def model_manufacturer(self) -> str:
+        """Returns the manufacturer of the bus."""
+        return self._model_manufacturer
+
+    @property
+    def engine(self) -> AbstractEngine:
+        """Returns the engine of the bus."""
+        return self._engine
+
+    @property
     def energy_ratio(self) -> float:
         """Returns the ratio of current energy to maximum capacity."""
         return self._engine.energy_ratio
