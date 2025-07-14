@@ -416,7 +416,7 @@ class Bus:
         total_pm_emissions: float = pm_emissions.sum()
 
         percentage_consumption = (
-            total_consumption / self.energy_capacity * 100
+            total_net_consumption / self.energy_capacity * 100
             if self.energy_capacity > 0
             else 0.0
         )
