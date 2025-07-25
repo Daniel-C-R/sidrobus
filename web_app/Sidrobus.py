@@ -17,7 +17,13 @@ st.markdown(
     """
 )
 
-st.markdown("© 2025 Daniel Castaño Rodríguez")
+st.markdown(
+    "© 2025 Daniel Castaño Rodríguez"
+    " [GitHub](https://github.com/Daniel-C-R/)"
+    " [LinkedIn](https://www.linkedin.com/in/danielcr1/)"
+    " [Email](mailto:daniel.cr.0001@gmail.com)"
+    " [ORCID](https://orcid.org/0009-0009-6907-7798)"
+)
 
 st.markdown(
     """
